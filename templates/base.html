@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ASE Portfolio</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="page-wrapper">
+    <header>
+        <div class="header-content">
+            <h1><b>ASE Flask Portfolio</b></h1>
+            <h3>This page highlights my work in ASE class</h3>
+        </div>
+        <nav class="main-nav">
+            <ul class="navbar-left">
+                <li class="{% if request.path == url_for('home') %}active{% endif %}">
+                    <a href="{{ url_for('home')}}">Home</a>
+                </li>
+                <li class="{% if request.path == url_for('rectangle') %}active{% endif %}">
+                    <a href="{{ url_for('rectangle')}}">Rectangle</a>
+                </li>
+            </ul>
+            <ul class="navbar-right">
+                {% if session.get('user_id') %}
+                    {% if session.get('role') == 'admin' %}
+                        <li class="{% if request.path == url_for('admin') %}active{% endif %}">
+                            <a href="{{ url_for('admin')}}">Admin</a>
+                        </li>
+                    {% endif %}
+                     <li class="{% if request.path == url_for('private') %}active{% endif %}">
+                        <a href="{{ url_for('private')}}">Members</a>
+                    </li>
+                    <li><a href="{{ url_for('logout') }}" class="btn-logout">Log Out</a></li>
+                {% else %}
+                    <li class="{% if request.path == url_for('signup') %}active{% endif %}">
+                        <a href="{{ url_for('signup')}}">Sign Up</a>
+                    </li>
+                    <li class="{% if request.path == url_for('login') %}active{% endif %}">
+                        <a href="{{ url_for('login')}}">Log In</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+    <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-container">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,139 @@
+/* --- GLOBAL STYLES --- */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f2f5;
+    margin: 0;
+    padding: 0;
+    color: #333;
+}
+
+.page-wrapper {
+    max-width: 1000px;
+    margin: 0 auto;
+    background-color: white;
+    min-height: 100vh;
+    box-shadow: 0 0 20px rgba(0,0,0,0.05);
+}
+
+header {
+    background-color: #343a40; /* Dark header background */
+    color: white;
+    padding-bottom: 0;
+}
+
+.header-content {
+    text-align: center;
+    padding: 20px;
+}
+
+/* --- NAVIGATION BAR (Split Left/Right) --- */
+.main-nav {
+    display: flex;
+    justify-content: space-between; /* Pushes left and right groups apart */
+    align-items: center;
+    background-color: #f8f9fa; /* Light grey nav bar */
+    border-bottom: 1px solid #ddd;
+    padding: 0 20px;
+}
+
+/* Reset list styles for both lists */
+.navbar-left, .navbar-right {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 15px; /* Space between links */
+}
+
+/* Link Styles */
+.main-nav a {
+    text-decoration: none;
+    color: #555;
+    font-weight: 600;
+    padding: 15px 10px;
+    display: block;
+    transition: color 0.2s;
+}
+
+.main-nav a:hover {
+    color: #007bff; /* Blue hover */
+}
+
+/* Active Link State */
+li.active a {
+    color: #007bff;
+    border-bottom: 3px solid #007bff;
+}
+
+/* Logout Button Special Style */
+.btn-logout {
+    color: #dc3545 !important;
+}
+.btn-logout:hover {
+    background-color: #ffe6e6;
+}
+
+/* --- FLASH MESSAGES --- */
+.flash-container {
+    max-width: 600px;
+    margin: 20px auto;
+}
+
+.alert {
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: bold;
+}
+.alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.alert-danger  { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+.alert-info    { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+
+/* --- CARD FORM STYLES (Rectangle, Login, Signup) --- */
+.centered-justified {
+    max-width: 500px;
+    margin: 50px auto;
+    padding: 40px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.centered-justified h2, .centered-justified p {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    box-sizing: border-box; /* Fixes width issues */
+    font-size: 1rem;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    color: white;
+    font-weight: bold;
+}
+
+.btn-primary { background-color: #007bff; }
+.btn-secondary { background-color: #6c757d; }
