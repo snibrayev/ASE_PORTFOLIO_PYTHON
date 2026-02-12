@@ -1,4 +1,6 @@
-/* --- GLOBAL STYLES --- */
+/* =========================================
+   1. GLOBAL STYLES
+   ========================================= */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f0f2f5;
@@ -26,7 +28,9 @@ header {
     padding: 20px;
 }
 
-/* --- NAVIGATION BAR (Split Left/Right) --- */
+/* =========================================
+   2. NAVIGATION BAR (Split Left/Right)
+   ========================================= */
 .main-nav {
     display: flex;
     justify-content: space-between; /* Pushes left and right groups apart */
@@ -73,7 +77,9 @@ li.active a {
     background-color: #ffe6e6;
 }
 
-/* --- FLASH MESSAGES --- */
+/* =========================================
+   3. FLASH MESSAGES
+   ========================================= */
 .flash-container {
     max-width: 600px;
     margin: 20px auto;
@@ -90,7 +96,9 @@ li.active a {
 .alert-danger  { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 .alert-info    { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
 
-/* --- CARD FORM STYLES (Rectangle, Login, Signup) --- */
+/* =========================================
+   4. CARD FORM STYLES (Rectangle, Login, Signup)
+   ========================================= */
 .centered-justified {
     max-width: 500px;
     margin: 50px auto;
@@ -133,7 +141,175 @@ li.active a {
     cursor: pointer;
     color: white;
     font-weight: bold;
+    text-align: center;
+    display: inline-block;
 }
 
 .btn-primary { background-color: #007bff; }
 .btn-secondary { background-color: #6c757d; }
+.btn-info { background-color: #17a2b8; } /* Added for Request Code button */
+
+/* =========================================
+   5. WEATHER PAGE STYLES (NEW)
+   ========================================= */
+
+.weather-page {
+    max-width: 800px;
+    margin: 40px auto;
+    text-align: center;
+    padding: 0 20px;
+}
+
+.weather-title {
+    color: #333;
+    font-size: 2.2rem;
+    margin-bottom: 10px;
+}
+
+.weather-subtitle {
+    color: #666;
+    margin-bottom: 30px;
+    font-size: 1.1rem;
+}
+
+/* Card Container */
+.weather-card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+/* Weather Form Elements */
+.weather-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.weather-label {
+    text-align: left;
+    font-weight: bold;
+    color: #444;
+    margin-bottom: -5px;
+}
+
+.weather-input {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.weather-input:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+}
+
+.weather-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s;
+    margin-top: 10px;
+    width: 100%;
+}
+
+.weather-button:hover {
+    background-color: #0056b3;
+}
+
+/* Weather Error Message */
+.weather-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: 20px;
+    border: 1px solid #f5c6cb;
+}
+
+/* Weather Results Section */
+.weather-results {
+    margin-top: 30px;
+    border-top: 2px solid #f0f0f0;
+    padding-top: 20px;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.weather-results-title {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 1.4rem;
+}
+
+/* Grid for Weather Stats */
+.weather-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two columns side by side */
+    gap: 15px;
+}
+
+.weather-stat {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #eee;
+}
+
+.weather-stat-label {
+    font-size: 0.85rem;
+    color: #777;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+}
+
+.weather-stat-value {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #222;
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* =========================================
+   6. RESPONSIVE / MOBILE
+   ========================================= */
+@media (max-width: 600px) {
+    .main-nav {
+        flex-direction: column;
+        padding: 10px;
+    }
+
+    .navbar-left, .navbar-right {
+        flex-direction: column;
+        width: 100%;
+        text-align: center;
+        gap: 5px;
+    }
+
+    .main-nav a {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .weather-grid {
+        grid-template-columns: 1fr; /* Stack weather stats on small screens */
+    }
+}

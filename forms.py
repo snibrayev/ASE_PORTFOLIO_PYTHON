@@ -27,3 +27,7 @@ class LoginForm(FlaskForm):
 class UpgradeToAdminForm(FlaskForm):
     admin_code = StringField('Admin Code', validators=[InputRequired()])
     submit = SubmitField('Upgrade to Admin')
+
+class WeatherReport(FlaskForm):
+    city = StringField('City', validators=[InputRequired(), Length(min=2, max=100)])
+    submit = SubmitField('Get Weather Report')

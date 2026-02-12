@@ -20,6 +20,9 @@
                 <li class="{% if request.path == url_for('rectangle') %}active{% endif %}">
                     <a href="{{ url_for('rectangle')}}">Rectangle</a>
                 </li>
+                <li class="{% if request.path == url_for('weather') %}active{% endif %}">
+                        <a href="{{ url_for('weather') }}">Weather</a>
+                </li>
             </ul>
             <ul class="navbar-right">
                 {% if session.get('user_id') %}

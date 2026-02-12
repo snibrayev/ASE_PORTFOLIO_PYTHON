@@ -1,6 +1,6 @@
+import requests
 from flask import Flask, render_template, url_for, flash, redirect, session
-from flask_mail import Mail, Message
-from forms import RectangleForm, SignupForm, LoginForm, UpgradeToAdminForm
+from forms import RectangleForm, SignupForm, LoginForm, UpgradeToAdminForm, WeatherReport
 from models import db, User
 import random
 
@@ -9,14 +9,6 @@ app.config['SECRET_KEY'] = 'pizza'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# --- EMAIL CONFIGURATION ---
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = '35055@acs.sch.ae'  # <--- REPLACE THIS
-app.config['MAIL_PASSWORD'] = '12345678'  # <--- REPLACE THIS
-
-mail = Mail(app)
 db.init_app(app)
 
 with app.app_context():
@@ -54,12 +46,11 @@ def rectangle():
 def signup():
     form = SignupForm()
     if form.validate_on_submit():
-        # Check if email exists
         if User.query.filter_by(email=form.email.data).first():
             flash('Email already registered.', 'danger')
             return render_template('signup.html', form=form)
 
-        # EVERYONE starts as a 'user'. No admin code here anymore.
+        # Everyone starts as a USER
         new_user = User(username=form.username.data, email=form.email.data, role="user")
         new_user.set_password(form.password.data)
 
@@ -102,29 +93,23 @@ def logout():
     return redirect(url_for('home'))
 
 
-# --- NEW: ADMIN UPGRADE LOGIC ---
+# --- NEW: CONSOLE OTP LOGIC ---
 
 @app.route('/request_code')
 def request_code():
     # 1. Generate a random 6-digit number
     code = str(random.randint(100000, 999999))
 
-    # 2. Save it to the session (temporary memory)
+    # 2. Save it to the session
     session['admin_otp'] = code
 
-    # 3. Send email to the current user
-    user = User.query.get(session['user_id'])
+    # 3. PRINT TO TERMINAL (Instead of Email)
+    print("\n" + "=" * 40)
+    print(f" [SIMULATED EMAIL] To: {session['username']}")
+    print(f" YOUR ADMIN CODE IS: {code}")
+    print("=" * 40 + "\n")
 
-    try:
-        msg = Message('Admin Access Code',
-                      sender='noreply@ase-portfolio.com',
-                      recipients=[user.email])
-        msg.body = f"Your Admin Upgrade Code is: {code}"
-        mail.send(msg)
-        flash('Code sent! Check your email.', 'info')
-    except Exception as e:
-        print(e)
-        flash('Error sending email. Check server logs.', 'danger')
+    flash('Code "sent"! Check your server terminal/console.', 'info')
 
     return redirect(url_for('private'))
 
@@ -136,19 +121,16 @@ def private():
 
     upgrade_form = UpgradeToAdminForm()
 
-    # If they submit the code form
     if upgrade_form.validate_on_submit():
-        real_code = session.get('admin_otp')  # Get the code we generated earlier
+        real_code = session.get('admin_otp')
 
         if real_code and upgrade_form.admin_code.data == real_code:
-            # Code matches! Upgrade the user.
             user = User.query.get(session['user_id'])
             user.role = 'admin'
             db.session.commit()
 
-            # Update session so the page updates immediately
             session['role'] = 'admin'
-            session.pop('admin_otp', None)  # Delete used code
+            session.pop('admin_otp', None)
 
             flash('Success! You are now an Admin.', 'success')
             return redirect(url_for('private'))
@@ -164,7 +146,6 @@ def private():
 def admin():
     if session.get('role') != 'admin':
         return redirect(url_for('home'))
-
     users = User.query.all()
     return render_template('admin.html', users=users)
 
@@ -188,6 +169,55 @@ def delete_user(user_id):
         db.session.commit()
     return redirect(url_for('admin'))
 
+@app.route('/weather', methods=['GET', 'POST'])
+def weather():
+    form = WeatherReport()
+
+    weather_data = None
+    error = None
+
+    if form.validate_on_submit():
+        city = form.city.data.strip()
+
+        # 1) City -> (lat, lon) using Nominatim
+        geo_url = "https://nominatim.openstreetmap.org/search"
+        geo_params = {"q": city, "format": "json", "limit": 1}
+        geo_headers = {"User-Agent": "ASE-Flask-Student-Project (school use)"}
+
+        geo_resp = requests.get(geo_url, params=geo_params, headers=geo_headers, timeout=10)
+        geo_results = geo_resp.json()
+
+        if not geo_results:
+            error = "City not found. Please try another spelling."
+            return render_template("weather.html", form=form, weather_data=weather_data, error=error)
+
+        lat = float(geo_results[0]["lat"])
+        lon = float(geo_results[0]["lon"])
+
+        # 2) (lat, lon) -> current weather using Open-Meteo
+        weather_url = "https://api.open-meteo.com/v1/forecast"
+        weather_params = {
+            "latitude": lat,
+            "longitude": lon,
+            "current_weather": True
+        }
+
+        w_resp = requests.get(weather_url, params=weather_params, timeout=10)
+        w_json = w_resp.json()
+
+        if "current_weather" not in w_json:
+            error = "Weather data is unavailable right now. Try again later."
+        else:
+            cw = w_json["current_weather"]
+            weather_data = {
+                "city": city,
+                "temperature": cw.get("temperature"),
+                "windspeed": cw.get("windspeed"),
+                "winddirection": cw.get("winddirection"),
+                "time": cw.get("time")
+            }
+
+    return render_template("weather.html", form=form, weather_data=weather_data, error=error)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5003)

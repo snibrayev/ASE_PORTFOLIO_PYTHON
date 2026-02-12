@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="weather-page">
+  <h2 class="weather-title">Weather Lookup</h2>
+  <p class="weather-subtitle">Enter a city name to view live weather data.</p>
+
+  <div class="weather-card">
+    <form method="post" class="weather-form">
+      {{ form.hidden_tag() }}
+
+      <label class="weather-label">{{ form.city.label.text }}</label>
+      {{ form.city(class="weather-input", placeholder="e.g., Abu Dhabi") }}
+
+      {{ form.submit(class="weather-button") }}
+    </form>
+
+    {% if error %}
+      <div class="weather-error">{{ error }}</div>
+    {% endif %}
+
+    {% if weather_data %}
+      <div class="weather-results">
+        <h3 class="weather-results-title">Weather in {{ weather_data.city }}</h3>
+
+        <div class="weather-grid">
+          <div class="weather-stat">
+            <div class="weather-stat-label">Temperature</div>
+            <div class="weather-stat-value">{{ weather_data.temperature }} °C</div>
+          </div>
+
+          <div class="weather-stat">
+            <div class="weather-stat-label">Wind Speed</div>
+            <div class="weather-stat-value">{{ weather_data.windspeed }} km/h</div>
+          </div>
+
+          <div class="weather-stat">
+            <div class="weather-stat-label">Wind Direction</div>
+            <div class="weather-stat-value">{{ weather_data.winddirection }}°</div>
+          </div>
+
+          <div class="weather-stat">
+            <div class="weather-stat-label">Time</div>
+            <div class="weather-stat-value">{{ weather_data.time }}</div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
