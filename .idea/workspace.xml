@@ -4,8 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6d87f9fe-0b0d-4c80-9eb7-af0250f38b8e" name="Changes" comment="Feb_10">
-      <change afterPath="$PROJECT_DIR$/templates/weather.html" afterDir="false" />
+    <list default="true" id="6d87f9fe-0b0d-4c80-9eb7-af0250f38b8e" name="Changes" comment="Feb_12">
+      <change afterPath="$PROJECT_DIR$/templates/market.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/forms.py" beforeDir="false" afterPath="$PROJECT_DIR$/forms.py" afterDir="false" />
@@ -142,7 +142,9 @@
       <workItem from="1769666918231" duration="2916000" />
       <workItem from="1770007904106" duration="3198000" />
       <workItem from="1770703619863" duration="3060000" />
-      <workItem from="1770870934328" duration="3030000" />
+      <workItem from="1770870934328" duration="3429000" />
+      <workItem from="1771398958607" duration="1678000" />
+      <workItem from="1771565430765" duration="314000" />
     </task>
     <task id="LOCAL-00001" summary="Feb_10">
       <option name="closed" value="true" />
@@ -152,7 +154,23 @@
       <option name="project" value="LOCAL" />
       <updated>1770703796965</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Feb_12">
+      <option name="closed" value="true" />
+      <created>1770874684661</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1770874684661</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Feb_12">
+      <option name="closed" value="true" />
+      <created>1770874692440</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1770874692440</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -160,9 +178,10 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Feb_10" />
-    <option name="LAST_COMMIT_MESSAGE" value="Feb_10" />
+    <MESSAGE value="Feb_12" />
+    <option name="LAST_COMMIT_MESSAGE" value="Feb_12" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/ASE_PORTFOLIO$app.coverage" NAME="app Coverage Results" MODIFIED="1770873916772" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/ASE_PORTFOLIO$app.coverage" NAME="app Coverage Results" MODIFIED="1771400439525" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

@@ -23,6 +23,9 @@
                 <li class="{% if request.path == url_for('weather') %}active{% endif %}">
                         <a href="{{ url_for('weather') }}">Weather</a>
                 </li>
+                <li class="{% if request.path == url_for('market') %}active{% endif %}">
+                        <a href="{{ url_for('market') }}">Market</a>
+                </li>
             </ul>
             <ul class="navbar-right">
                 {% if session.get('user_id') %}

@@ -1,6 +1,7 @@
 import requests
+import time
 from flask import Flask, render_template, url_for, flash, redirect, session
-from forms import RectangleForm, SignupForm, LoginForm, UpgradeToAdminForm, WeatherReport
+from forms import RectangleForm, SignupForm, LoginForm, UpgradeToAdminForm, WeatherReport, MarketForm
 from models import db, User
 import random
 
@@ -93,7 +94,7 @@ def logout():
     return redirect(url_for('home'))
 
 
-# --- NEW: CONSOLE OTP LOGIC ---
+# --- CONSOLE OTP LOGIC ---
 
 @app.route('/request_code')
 def request_code():
@@ -169,6 +170,9 @@ def delete_user(user_id):
         db.session.commit()
     return redirect(url_for('admin'))
 
+
+# --- WEATHER ROUTE ---
+
 @app.route('/weather', methods=['GET', 'POST'])
 def weather():
     form = WeatherReport()
@@ -218,6 +222,74 @@ def weather():
             }
 
     return render_template("weather.html", form=form, weather_data=weather_data, error=error)
+
+
+# --- MARKET DASHBOARD (FIXED FOR AED) ---
+
+@app.route('/market', methods=['GET', 'POST'])
+def market():
+    form = MarketForm()
+
+    # Default values
+    target_currency = 'AED'
+    if form.validate_on_submit():
+        target_currency = form.currency.data.upper()
+
+    # Data holders
+    market_data = None
+    error = None
+
+    # 1. FETCH GOLD PRICE (Source: GoldAPI.io)
+    gold_api_key = 'goldapi-7v3osmlrppe1p-io'
+    gold_url = "https://www.goldapi.io/api/XAU/USD"
+    gold_headers = {"x-access-token": gold_api_key}
+
+    # 2. FETCH EXCHANGE RATE (Source: Open Exchange Rates - Supports AED!)
+    # This API gives us all rates relative to USD
+    forex_url = "https://open.er-api.com/v6/latest/USD"
+
+    try:
+        # Call Gold API
+        gold_resp = requests.get(gold_url, headers=gold_headers, timeout=10)
+        gold_json = gold_resp.json()
+
+        # Call Forex API
+        forex_resp = requests.get(forex_url, timeout=10)
+        forex_json = forex_resp.json()
+
+        # Check for API errors
+        if "error" in gold_json or "price" not in gold_json:
+            error = "Error fetching Gold data. Check API Key."
+        elif target_currency not in forex_json.get('rates', {}):
+            # Fallback if currency is invalid
+            error = f"Currency {target_currency} not supported. Try EUR, GBP, JPY, etc."
+        else:
+            # PROCESS DATA
+            gold_price_usd_oz = gold_json['price']
+
+            # Get the rate from the new API
+            exchange_rate = forex_json['rates'][target_currency]
+
+            # Calculations
+            gold_price_target_oz = gold_price_usd_oz * exchange_rate
+            gold_price_usd_g = gold_price_usd_oz / 31.1035
+            gold_price_target_g = gold_price_target_oz / 31.1035
+
+            market_data = {
+                "currency": target_currency,
+                "gold_usd_oz": round(gold_price_usd_oz, 2),
+                "gold_target_oz": round(gold_price_target_oz, 2),
+                "gold_usd_g": round(gold_price_usd_g, 2),
+                "gold_target_g": round(gold_price_target_g, 2),
+                "rate": exchange_rate,
+                "updated": time.strftime("%H:%M UTC")
+            }
+
+    except requests.exceptions.RequestException:
+        error = "Connection error. Please check your internet."
+
+    return render_template('market.html', form=form, market_data=market_data, error=error)
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5003)

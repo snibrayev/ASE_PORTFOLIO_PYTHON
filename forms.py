@@ -16,7 +16,6 @@ class SignupForm(FlaskForm):
         InputRequired(),
         EqualTo('password', message='Passwords must match')
     ])
-    # Deleted the admin_code field from here
     submit = SubmitField('Sign Up')
 
 class LoginForm(FlaskForm):
@@ -31,3 +30,8 @@ class UpgradeToAdminForm(FlaskForm):
 class WeatherReport(FlaskForm):
     city = StringField('City', validators=[InputRequired(), Length(min=2, max=100)])
     submit = SubmitField('Get Weather Report')
+
+class MarketForm(FlaskForm):
+    currency = StringField('Convert to Currency',
+                           validators=[InputRequired(), Length(min=3, max=3)])
+    submit = SubmitField('Update')

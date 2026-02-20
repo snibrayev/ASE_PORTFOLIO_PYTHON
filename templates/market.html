@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="weather-page">
+    <h2 class="weather-title">Market Dashboard</h2>
+    <p class="weather-subtitle">Live Gold Prices & Currency Rates</p>
+
+    <div class="weather-card" style="margin-bottom: 30px;">
+        <form method="POST" class="weather-form" style="flex-direction: row; align-items: flex-end; gap: 10px;">
+            {{ form.hidden_tag() }}
+            <div style="flex-grow: 1;">
+                <label class="weather-label">Select Currency (e.g., EUR, GBP, AED)</label>
+                {{ form.currency(class="weather-input", placeholder="AED", value=market_data.currency if market_data else "") }}
+            </div>
+            {{ form.submit(class="weather-button", style="width: auto; margin-top: 0;") }}
+        </form>
+    </div>
+
+    {% if error %}
+        <div class="weather-error">{{ error }}</div>
+    {% endif %}
+
+    {% if market_data %}
+        <div class="dashboard-grid">
+            <div class="dashboard-card">
+                <div class="card-label">Gold (USD/oz)</div>
+                <div class="card-value">${{ market_data.gold_usd_oz }}</div>
+            </div>
+            <div class="dashboard-card">
+                <div class="card-label">Gold ({{ market_data.currency }}/oz)</div>
+                <div class="card-value">{{ market_data.gold_target_oz }} <small>{{ market_data.currency }}</small></div>
+            </div>
+            <div class="dashboard-card">
+                <div class="card-label">Gold ({{ market_data.currency }}/gram)</div>
+                <div class="card-value">{{ market_data.gold_target_g }} <small>{{ market_data.currency }}</small></div>
+            </div>
+            <div class="dashboard-card">
+                <div class="card-label">USD &rarr; {{ market_data.currency }} Rate</div>
+                <div class="card-value">{{ market_data.rate }}</div>
+            </div>
+        </div>
+
+        <div class="weather-card" style="max-width: 100%; margin-top: 30px;">
+            <h3 class="weather-results-title">Detailed Market Breakdown</h3>
+            <table class="market-table">
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Value</th>
+                        <th>Unit</th>
+                        <th>Source</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Spot Price (USD)</td>
+                        <td>{{ market_data.gold_usd_oz }}</td>
+                        <td>USD / oz</td>
+                        <td>GoldAPI.io</td>
+                    </tr>
+                    <tr>
+                        <td>Spot Price ({{ market_data.currency }})</td>
+                        <td>{{ market_data.gold_target_oz }}</td>
+                        <td>{{ market_data.currency }} / oz</td>
+                        <td>Calculated</td>
+                    </tr>
+                    <tr>
+                        <td>Price per Gram (USD)</td>
+                        <td>{{ market_data.gold_usd_g }}</td>
+                        <td>USD / g</td>
+                        <td>Calculated</td>
+                    </tr>
+                    <tr>
+                        <td>Price per Gram ({{ market_data.currency }})</td>
+                        <td>{{ market_data.gold_target_g }}</td>
+                        <td>{{ market_data.currency }} / g</td>
+                        <td>Calculated</td>
+                    </tr>
+                    <tr>
+                        <td>Exchange Rate</td>
+                        <td>{{ market_data.rate }}</td>
+                        <td>USD &rarr; {{ market_data.currency }}</td>
+                        <td>Frankfurter API</td>
+                    </tr>
+                    <tr>
+                        <td>Last Update</td>
+                        <td>{{ market_data.updated }}</td>
+                        <td>Time</td>
+                        <td>System</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
