@@ -2,7 +2,6 @@
 
 {% block content %}
 
-{# ── inline page-scoped styles ─────────────────────────────────────────── #}
 <style>
 /* ── ticker bar ── */
 .ticker-bar {
@@ -106,7 +105,7 @@
 }
 .currency-form button:hover { background: #f0d560; transform: translateY(-1px); }
 
-/* ── stat cards row ── */
+/* ── stat cards ── */
 .stat-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -125,10 +124,7 @@
     opacity: 0;
     animation: fadeUp 0.5s ease forwards;
 }
-.stat-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 28px rgba(0,0,0,0.35);
-}
+.stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(0,0,0,0.35); }
 .stat-card::after {
     content: '';
     position: absolute;
@@ -146,36 +142,18 @@
     to   { opacity: 1; transform: translateY(0); }
 }
 .stat-card .sc-label {
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 8px;
+    font-size: 0.7rem; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: 8px;
 }
 .stat-card .sc-value {
     font-family: var(--font-display);
-    font-size: 1.9rem;
-    letter-spacing: 0.03em;
-    color: var(--text-primary);
-    line-height: 1;
+    font-size: 1.9rem; letter-spacing: 0.03em;
+    color: var(--text-primary); line-height: 1;
 }
-.stat-card .sc-sub {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    margin-top: 5px;
-}
+.stat-card .sc-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 5px; }
 
-/* ── two-column lower section ── */
-.lower-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 18px;
-    margin-bottom: 24px;
-}
-@media (max-width: 820px) { .lower-grid { grid-template-columns: 1fr; } }
-
-/* ── panel shared ── */
+/* ── panel ── */
 .panel {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -183,16 +161,13 @@
     padding: 26px 24px;
     position: relative;
     overflow: hidden;
+    margin-bottom: 18px;
 }
 .panel-title {
     font-family: var(--font-display);
-    font-size: 1.3rem;
-    letter-spacing: 0.07em;
-    color: var(--text-primary);
-    margin-bottom: 18px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    font-size: 1.3rem; letter-spacing: 0.07em;
+    color: var(--text-primary); margin-bottom: 18px;
+    display: flex; align-items: center; gap: 10px;
 }
 .panel-title-icon {
     width: 26px; height: 26px;
@@ -203,143 +178,192 @@
     font-size: 0.85rem;
 }
 
-/* ── gold calculator ── */
-.calc-input-row {
+/* ── CHART PANEL ── */
+.chart-controls {
     display: flex;
-    gap: 10px;
     align-items: center;
-    margin-bottom: 14px;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
 }
-.calc-input-row input {
-    flex: 1;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text-primary);
-    font-family: var(--font-body);
-    font-size: 1rem;
-    padding: 10px 12px;
-    outline: none;
-    transition: border-color var(--transition);
-}
-.calc-input-row input:focus { border-color: var(--accent); }
-.calc-unit-toggle {
+.chart-toggle {
     display: flex;
     background: var(--surface-2);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     overflow: hidden;
 }
-.calc-unit-toggle button {
+.chart-toggle button {
     background: none;
     border: none;
-    padding: 8px 14px;
+    padding: 7px 18px;
     color: var(--text-muted);
     font-family: var(--font-body);
     font-size: 0.8rem;
     font-weight: 600;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.07em;
     cursor: pointer;
     transition: background var(--transition), color var(--transition);
 }
-.calc-unit-toggle button.active {
+.chart-toggle button.active {
     background: var(--accent);
     color: #111;
 }
-.calc-result {
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 18px;
-    text-align: center;
-    min-height: 72px;
+.chart-meta {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+}
+.chart-meta span { color: var(--accent); font-weight: 600; }
+
+.chart-wrapper {
+    position: relative;
+    height: 280px;
+}
+
+.chart-loading {
+    position: absolute;
+    inset: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 12px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+}
+.chart-spinner {
+    width: 28px; height: 28px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.chart-error {
+    text-align: center;
+    padding: 40px;
+    color: var(--danger);
+    font-size: 0.85rem;
+}
+
+/* ── chart stat bar ── */
+.chart-stats-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+}
+.chart-stat-item { text-align: center; }
+.chart-stat-item .csi-label {
+    font-size: 0.68rem; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: 4px;
+}
+.chart-stat-item .csi-value {
+    font-family: var(--font-display);
+    font-size: 1.1rem; letter-spacing: 0.04em;
+    color: var(--text-primary);
+}
+.csi-value.positive { color: var(--success); }
+.csi-value.negative { color: var(--danger); }
+
+/* ── two-col lower ── */
+.lower-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 18px;
+}
+@media (max-width: 820px) { .lower-grid { grid-template-columns: 1fr; } }
+
+/* ── gold calculator ── */
+.calc-input-row {
+    display: flex; gap: 10px; align-items: center; margin-bottom: 14px;
+}
+.calc-input-row input {
+    flex: 1;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text-primary);
+    font-family: var(--font-body); font-size: 1rem;
+    padding: 10px 12px; outline: none;
+    transition: border-color var(--transition);
+}
+.calc-input-row input:focus { border-color: var(--accent); }
+.calc-unit-toggle {
+    display: flex;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); overflow: hidden;
+}
+.calc-unit-toggle button {
+    background: none; border: none; padding: 8px 14px;
+    color: var(--text-muted); font-family: var(--font-body);
+    font-size: 0.8rem; font-weight: 600; letter-spacing: 0.06em;
+    cursor: pointer; transition: background var(--transition), color var(--transition);
+}
+.calc-unit-toggle button.active { background: var(--accent); color: #111; }
+.calc-result {
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 18px;
+    text-align: center; min-height: 72px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
 .calc-result-value {
     font-family: var(--font-display);
-    font-size: 2.2rem;
-    letter-spacing: 0.04em;
-    color: var(--accent);
-    line-height: 1;
+    font-size: 2.2rem; letter-spacing: 0.04em; color: var(--accent); line-height: 1;
 }
 .calc-result-label {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    margin-top: 5px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;
+    letter-spacing: 0.08em; text-transform: uppercase;
 }
 
-/* ── currency comparison table ── */
-.currency-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.88rem;
-}
+/* ── currency comparison ── */
+.currency-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
 .currency-table th {
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--border);
-    text-align: left;
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--text-muted);
+    padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left;
 }
 .currency-table td {
-    padding: 10px 10px;
-    border-bottom: 1px solid rgba(46,46,46,0.6);
-    color: var(--text-secondary);
-    transition: background var(--transition);
+    padding: 10px 10px; border-bottom: 1px solid rgba(46,46,46,0.6);
+    color: var(--text-secondary); transition: background var(--transition);
 }
 .currency-table tr:hover td { background: var(--surface-2); color: var(--text-primary); }
 .currency-table tr:last-child td { border-bottom: none; }
 .flag { margin-right: 6px; font-size: 1rem; }
 .highlight-row td { color: var(--accent) !important; font-weight: 600; }
 
-/* ── full breakdown table ── */
-.breakdown-panel { margin-bottom: 0; }
-.breakdown-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.88rem;
-}
+/* ── breakdown table ── */
+.breakdown-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
 .breakdown-table th {
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface-2);
-    text-align: left;
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--text-muted);
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+    background: var(--surface-2); text-align: left;
 }
 .breakdown-table td {
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--border);
-    color: var(--text-secondary);
+    padding: 12px 14px; border-bottom: 1px solid var(--border); color: var(--text-secondary);
 }
 .breakdown-table tr:hover td { background: var(--surface-2); }
 .breakdown-table tr:last-child td { border-bottom: none; }
 
-/* ── no-data state ── */
-.no-data {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--text-muted);
-}
+/* ── no data ── */
+.no-data { text-align: center; padding: 40px 20px; color: var(--text-muted); }
 .no-data-icon { font-size: 2.5rem; margin-bottom: 12px; }
 .no-data p { font-size: 0.9rem; letter-spacing: 0.06em; }
 </style>
 
-{# ── PAGE ─────────────────────────────────────────────────────────────── #}
+<!-- Chart.js from CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
 <div style="max-width: 1100px; margin: 0 auto;">
 
-    {# Ticker bar #}
+    {# Ticker #}
     <div class="ticker-bar">
         <span class="ticker-dot"></span>
         <span class="ticker-label">Live</span>
@@ -354,7 +378,7 @@
         <span id="live-clock">--:--:--</span>
     </div>
 
-    {# Header + form #}
+    {# Header #}
     <div class="market-header">
         <div class="market-header-left">
             <h2>Market Dashboard</h2>
@@ -368,14 +392,13 @@
         </form>
     </div>
 
-    {# Error #}
     {% if error %}
         <div class="weather-error" style="margin-bottom: 20px;">⚠ {{ error }}</div>
     {% endif %}
 
     {% if market_data %}
 
-    {# ── STAT CARDS ── #}
+    {# Stat Cards #}
     <div class="stat-row">
         <div class="stat-card">
             <div class="sc-label">Gold — USD / oz</div>
@@ -399,7 +422,64 @@
         </div>
     </div>
 
-    {# ── TWO-COL SECTION ── #}
+    {# ── CHART PANEL ── #}
+    <div class="panel">
+        <div class="chart-controls">
+            <div class="panel-title" style="margin-bottom:0;">
+                <span class="panel-title-icon">📈</span>
+                Gold Price History (USD/oz)
+            </div>
+            <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+                <div class="chart-meta">
+                    Range: <span id="chart-range-label">30 days</span> &nbsp;|&nbsp;
+                    Change: <span id="chart-change-label">—</span>
+                </div>
+                <div class="chart-toggle">
+                    <button type="button" data-days="7">7D</button>
+                    <button type="button" data-days="14">14D</button>
+                    <button type="button" data-days="30" class="active">30D</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-wrapper">
+            <div class="chart-loading" id="chart-loading">
+                <div class="chart-spinner"></div>
+                <span>Fetching historical data…</span>
+            </div>
+            <div class="chart-error" id="chart-error" style="display:none;"></div>
+            <canvas id="goldChart" style="display:none;"></canvas>
+        </div>
+
+        <div class="chart-stats-bar">
+            <div class="chart-stat-item">
+                <div class="csi-label">Period High</div>
+                <div class="csi-value" id="cs-high">—</div>
+            </div>
+            <div class="chart-stat-item">
+                <div class="csi-label">Period Low</div>
+                <div class="csi-value" id="cs-low">—</div>
+            </div>
+            <div class="chart-stat-item">
+                <div class="csi-label">Period Open</div>
+                <div class="csi-value" id="cs-open">—</div>
+            </div>
+            <div class="chart-stat-item">
+                <div class="csi-label">Latest Close</div>
+                <div class="csi-value" id="cs-close">—</div>
+            </div>
+            <div class="chart-stat-item">
+                <div class="csi-label">% Change</div>
+                <div class="csi-value" id="cs-pct">—</div>
+            </div>
+            <div class="chart-stat-item">
+                <div class="csi-label">Avg Price</div>
+                <div class="csi-value" id="cs-avg">—</div>
+            </div>
+        </div>
+    </div>
+
+    {# Two-col: Calculator + Currency Table #}
     <div class="lower-grid">
 
         {# Gold Calculator #}
@@ -408,16 +488,8 @@
                 <span class="panel-title-icon">⚖</span>
                 Gold Value Calculator
             </div>
-
             <div class="calc-input-row">
-                <input
-                    type="number"
-                    id="calc-amount"
-                    placeholder="Enter amount..."
-                    min="0"
-                    step="0.01"
-                    style="max-width: 100%;"
-                />
+                <input type="number" id="calc-amount" placeholder="Enter amount..." min="0" step="0.01" />
                 <div class="calc-unit-toggle">
                     <button type="button" class="active" data-unit="grams">g</button>
                     <button type="button" data-unit="oz">oz</button>
@@ -425,13 +497,11 @@
                     <button type="button" data-unit="tola">tola</button>
                 </div>
             </div>
-
             <div class="calc-result" id="calc-result-box">
                 <div class="calc-result-value" id="calc-result-usd">—</div>
                 <div class="calc-result-label" id="calc-result-label">Enter an amount above</div>
             </div>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">
                 <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;text-align:center;">
                     <div style="font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">USD</div>
                     <div style="font-family:var(--font-display);font-size:1.3rem;color:var(--text-primary);" id="calc-usd-side">—</div>
@@ -443,7 +513,7 @@
             </div>
         </div>
 
-        {# Multi-Currency Comparison #}
+        {# Currency Comparison #}
         <div class="panel">
             <div class="panel-title">
                 <span class="panel-title-icon">🌐</span>
@@ -451,33 +521,22 @@
             </div>
             <table class="currency-table">
                 <thead>
-                    <tr>
-                        <th>Currency</th>
-                        <th>Per Gram</th>
-                        <th>Per Ounce</th>
-                    </tr>
+                    <tr><th>Currency</th><th>Per Gram</th><th>Per Ounce</th></tr>
                 </thead>
-                <tbody id="currency-comparison-body">
-                    {# Populated by JS using rates from market_data #}
-                </tbody>
+                <tbody id="currency-comparison-body"></tbody>
             </table>
         </div>
     </div>
 
-    {# ── FULL BREAKDOWN TABLE ── #}
-    <div class="panel breakdown-panel">
+    {# Full Breakdown #}
+    <div class="panel">
         <div class="panel-title">
             <span class="panel-title-icon">📋</span>
             Full Market Breakdown
         </div>
         <table class="breakdown-table">
             <thead>
-                <tr>
-                    <th>Metric</th>
-                    <th>Value</th>
-                    <th>Unit</th>
-                    <th>Source</th>
-                </tr>
+                <tr><th>Metric</th><th>Value</th><th>Unit</th><th>Source</th></tr>
             </thead>
             <tbody>
                 <tr>
@@ -521,162 +580,285 @@
     </div>
 
     {% else %}
-
-    {# ── NO DATA STATE ── #}
     <div class="panel">
         <div class="no-data">
             <div class="no-data-icon">📊</div>
             <p>Enter a currency code above and hit <strong style="color:var(--accent);">Update</strong> to load live market data.</p>
-            <p style="margin-top:8px; font-size:0.8rem;">Try: AED · EUR · GBP · JPY · INR · SGD</p>
+            <p style="margin-top:8px;font-size:0.8rem;">Try: AED · EUR · GBP · JPY · INR · SGD</p>
         </div>
     </div>
-
     {% endif %}
 
 </div>
 
-{# ── JAVASCRIPT ───────────────────────────────────────────────────────── #}
+{# ── JAVASCRIPT ── #}
 <script>
 /* ── live clock ── */
 function updateClock() {
     const now = new Date();
-    document.getElementById('live-clock').textContent =
-        now.toUTCString().slice(17, 25) + ' UTC';
+    const uae = new Date(now.getTime() + (4 * 60 * 60 * 1000));
+    const hh  = String(uae.getUTCHours()).padStart(2, '0');
+    const mm  = String(uae.getUTCMinutes()).padStart(2, '0');
+    const ss  = String(uae.getUTCSeconds()).padStart(2, '0');
+    document.getElementById('live-clock').textContent = hh + ':' + mm + ':' + ss + ' GMT+4';
 }
 updateClock();
 setInterval(updateClock, 1000);
 
 {% if market_data %}
 
-/* ── animated number counter ── */
+/* ── animated counters ── */
 function animateCount(el) {
     const target   = parseFloat(el.dataset.count);
     const prefix   = el.dataset.prefix  || '';
     const suffix   = el.dataset.suffix  || '';
     const decimals = parseInt(el.dataset.decimals) || 0;
-    const duration = 900;
     const start    = performance.now();
-
+    const duration = 900;
     function step(now) {
-        const progress = Math.min((now - start) / duration, 1);
-        const ease     = 1 - Math.pow(1 - progress, 3);
-        const value    = (target * ease).toFixed(decimals);
-        el.textContent = prefix + Number(value).toLocaleString(undefined, {
-            minimumFractionDigits: decimals,
-            maximumFractionDigits: decimals
+        const p = Math.min((now - start) / duration, 1);
+        const e = 1 - Math.pow(1 - p, 3);
+        el.textContent = prefix + (target * e).toLocaleString(undefined, {
+            minimumFractionDigits: decimals, maximumFractionDigits: decimals
         }) + suffix;
-        if (progress < 1) requestAnimationFrame(step);
+        if (p < 1) requestAnimationFrame(step);
     }
     requestAnimationFrame(step);
 }
-
 document.querySelectorAll('[data-count]').forEach(animateCount);
 
-/* ── gold calculator ── */
-const GOLD_USD_G   = {{ market_data.gold_usd_g }};
-const GOLD_USD_OZ  = {{ market_data.gold_usd_oz }};
-const RATE         = {{ market_data.rate }};
-const TARGET_CUR   = "{{ market_data.currency }}";
-
-const unitFactors = {
-    grams: 1,
-    oz:    31.1035,
-    kg:    1000,
-    tola:  11.6638  /* 1 tola = 11.6638g */
-};
-
+/* ── calculator ── */
+const GOLD_USD_G  = {{ market_data.gold_usd_g }};
+const GOLD_USD_OZ = {{ market_data.gold_usd_oz }};
+const RATE        = {{ market_data.rate }};
+const TARGET_CUR  = "{{ market_data.currency }}";
+const unitFactors = { grams: 1, oz: 31.1035, kg: 1000, tola: 11.6638 };
 let activeUnit = 'grams';
 
 document.querySelectorAll('.calc-unit-toggle button').forEach(btn => {
     btn.addEventListener('click', () => {
-        document.querySelectorAll('.calc-unit-toggle button')
-            .forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.calc-unit-toggle button').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         activeUnit = btn.dataset.unit;
         recalculate();
     });
 });
-
 document.getElementById('calc-amount').addEventListener('input', recalculate);
 
 function recalculate() {
     const raw = parseFloat(document.getElementById('calc-amount').value);
-    const resultBox   = document.getElementById('calc-result-box');
-    const resultVal   = document.getElementById('calc-result-usd');
-    const resultLabel = document.getElementById('calc-result-label');
-    const usdSide     = document.getElementById('calc-usd-side');
-    const targetSide  = document.getElementById('calc-target-side');
-
+    const rv  = document.getElementById('calc-result-usd');
+    const rl  = document.getElementById('calc-result-label');
+    const us  = document.getElementById('calc-usd-side');
+    const ts  = document.getElementById('calc-target-side');
+    const fmt = (n, p='') => p + n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
     if (isNaN(raw) || raw <= 0) {
-        resultVal.textContent   = '—';
-        resultLabel.textContent = 'Enter an amount above';
-        usdSide.textContent     = '—';
-        targetSide.textContent  = '—';
-        return;
+        rv.textContent = '—'; rl.textContent = 'Enter an amount above';
+        us.textContent = '—'; ts.textContent = '—'; return;
     }
-
-    const grams   = raw * unitFactors[activeUnit];
-    const usdVal  = grams * GOLD_USD_G;
-    const tgtVal  = usdVal * RATE;
-
-    const fmt = (n, prefix='') => prefix + n.toLocaleString('en-US', {
-        minimumFractionDigits: 2, maximumFractionDigits: 2
-    });
-
-    resultVal.textContent   = fmt(usdVal, '$');
-    resultLabel.textContent = `${raw} ${activeUnit} of gold ≈ ${fmt(tgtVal)} ${TARGET_CUR}`;
-    usdSide.textContent     = fmt(usdVal, '$');
-    targetSide.textContent  = fmt(tgtVal);
+    const grams  = raw * unitFactors[activeUnit];
+    const usdVal = grams * GOLD_USD_G;
+    const tgtVal = usdVal * RATE;
+    rv.textContent = fmt(usdVal, '$');
+    rl.textContent = `${raw} ${activeUnit} ≈ ${fmt(tgtVal)} ${TARGET_CUR}`;
+    us.textContent = fmt(usdVal, '$');
+    ts.textContent = fmt(tgtVal);
 }
 
-/* ── multi-currency comparison (using hardcoded popular rates relative to USD) ── */
-/* We derive them from the rate the server already gave us for the target currency.
-   For the major currencies below we use fixed approximate cross-rates.
-   They serve as a comparison — real rates require extra API calls. */
-const MAJOR = [
-    { code: 'AED', flag: '🇦🇪', name: 'UAE Dirham' },
-    { code: 'USD', flag: '🇺🇸', name: 'US Dollar' },
-    { code: 'EUR', flag: '🇪🇺', name: 'Euro' },
-    { code: 'GBP', flag: '🇬🇧', name: 'British Pound' },
-    { code: 'JPY', flag: '🇯🇵', name: 'Japanese Yen' },
-    { code: 'INR', flag: '🇮🇳', name: 'Indian Rupee' },
-    { code: 'SAR', flag: '🇸🇦', name: 'Saudi Riyal' },
-    { code: 'SGD', flag: '🇸🇬', name: 'Singapore Dollar' },
-];
-
-/* Known approximate fixed rates vs USD (good enough for comparison panel) */
+/* ── currency comparison table ── */
 const APPROX_RATES = {
-    USD: 1,
-    AED: 3.6725,
-    EUR: 0.92,
-    GBP: 0.79,
-    JPY: 149.5,
-    INR: 83.1,
-    SAR: 3.75,
-    SGD: 1.34,
+    USD:1, AED:3.6725, EUR:0.92, GBP:0.79,
+    JPY:149.5, INR:83.1, SAR:3.75, SGD:1.34,
 };
-
-/* Override with the live rate we already have for the selected currency */
-APPROX_RATES["{{ market_data.currency }}"] = RATE;
-
+APPROX_RATES[TARGET_CUR] = RATE;
+const MAJOR = [
+    {code:'AED',flag:'🇦🇪',name:'UAE Dirham'},
+    {code:'USD',flag:'🇺🇸',name:'US Dollar'},
+    {code:'EUR',flag:'🇪🇺',name:'Euro'},
+    {code:'GBP',flag:'🇬🇧',name:'British Pound'},
+    {code:'JPY',flag:'🇯🇵',name:'Japanese Yen'},
+    {code:'INR',flag:'🇮🇳',name:'Indian Rupee'},
+    {code:'SAR',flag:'🇸🇦',name:'Saudi Riyal'},
+    {code:'SGD',flag:'🇸🇬',name:'Singapore Dollar'},
+];
 const tbody = document.getElementById('currency-comparison-body');
 MAJOR.forEach(cur => {
-    const r          = APPROX_RATES[cur.code] || null;
-    const perG       = r ? (GOLD_USD_G  * r).toFixed(2) : '—';
-    const perOz      = r ? (GOLD_USD_OZ * r).toFixed(2) : '—';
-    const isSelected = cur.code === TARGET_CUR;
-
+    const r = APPROX_RATES[cur.code] || null;
     const tr = document.createElement('tr');
-    if (isSelected) tr.classList.add('highlight-row');
+    if (cur.code === TARGET_CUR) tr.classList.add('highlight-row');
     tr.innerHTML = `
         <td><span class="flag">${cur.flag}</span>${cur.code}
             <span style="font-size:0.75rem;color:var(--text-muted);margin-left:4px;">${cur.name}</span>
         </td>
-        <td>${r ? Number(perG).toLocaleString('en-US',{minimumFractionDigits:2}) : '—'}</td>
-        <td>${r ? Number(perOz).toLocaleString('en-US',{minimumFractionDigits:2}) : '—'}</td>
+        <td>${r ? (GOLD_USD_G * r).toLocaleString('en-US',{minimumFractionDigits:2}) : '—'}</td>
+        <td>${r ? (GOLD_USD_OZ * r).toLocaleString('en-US',{minimumFractionDigits:2}) : '—'}</td>
     `;
     tbody.appendChild(tr);
 });
+
+/* ══════════════════════════════════════════
+   CHART — fetches from /api/gold-history
+   ══════════════════════════════════════════ */
+let goldChart = null;
+let currentDays = 30;
+
+function fmt$(n) {
+    return '$' + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+async function loadChart(days) {
+    currentDays = days;
+
+    // update toggle buttons
+    document.querySelectorAll('.chart-toggle button').forEach(b => {
+        b.classList.toggle('active', parseInt(b.dataset.days) === days);
+    });
+    document.getElementById('chart-range-label').textContent = days + ' days';
+
+    // show loading
+    document.getElementById('chart-loading').style.display = 'flex';
+    document.getElementById('chart-error').style.display   = 'none';
+    document.getElementById('goldChart').style.display     = 'none';
+
+    // reset stat bar
+    ['cs-high','cs-low','cs-open','cs-close','cs-pct','cs-avg'].forEach(id => {
+        const el = document.getElementById(id);
+        el.textContent = '—';
+        el.className = 'csi-value';
+    });
+    document.getElementById('chart-change-label').textContent = '—';
+
+    try {
+        const resp = await fetch(`/api/gold-history?days=${days}`);
+        const data = await resp.json();
+
+        if (data.error) throw new Error(data.error);
+        if (!data.labels || data.labels.length === 0) throw new Error('No data returned.');
+
+        const labels = data.labels;
+        const prices = data.prices;
+
+        // ── compute stats ──
+        const high  = Math.max(...prices);
+        const low   = Math.min(...prices);
+        const open  = prices[0];
+        const close = prices[prices.length - 1];
+        const avg   = prices.reduce((a,b) => a+b, 0) / prices.length;
+        const pct   = ((close - open) / open * 100);
+        const absDiff = close - open;
+
+        document.getElementById('cs-high').textContent  = fmt$(high);
+        document.getElementById('cs-low').textContent   = fmt$(low);
+        document.getElementById('cs-open').textContent  = fmt$(open);
+        document.getElementById('cs-close').textContent = fmt$(close);
+        document.getElementById('cs-avg').textContent   = fmt$(avg);
+
+        const pctEl = document.getElementById('cs-pct');
+        pctEl.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+        pctEl.className   = 'csi-value ' + (pct >= 0 ? 'positive' : 'negative');
+
+        const changeLabel = document.getElementById('chart-change-label');
+        changeLabel.textContent = (pct >= 0 ? '▲ +' : '▼ ') + fmt$(Math.abs(absDiff)) + ' (' + pct.toFixed(2) + '%)';
+        changeLabel.style.color = pct >= 0 ? 'var(--success)' : 'var(--danger)';
+
+        // ── gradient fill ──
+        const canvas = document.getElementById('goldChart');
+        const ctx    = canvas.getContext('2d');
+        const grad   = ctx.createLinearGradient(0, 0, 0, 280);
+        grad.addColorStop(0,   'rgba(232,200,74,0.25)');
+        grad.addColorStop(0.6, 'rgba(232,200,74,0.05)');
+        grad.addColorStop(1,   'rgba(232,200,74,0)');
+
+        // ── build or update chart ──
+        if (goldChart) {
+            goldChart.data.labels         = labels;
+            goldChart.data.datasets[0].data = prices;
+            goldChart.data.datasets[0].backgroundColor = grad;
+            goldChart.update('active');
+        } else {
+            goldChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Gold USD/oz',
+                        data: prices,
+                        borderColor: '#e8c84a',
+                        borderWidth: 2,
+                        backgroundColor: grad,
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: labels.length > 20 ? 0 : 3,
+                        pointHoverRadius: 5,
+                        pointBackgroundColor: '#e8c84a',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1a1a1a',
+                            borderColor: '#2e2e2e',
+                            borderWidth: 1,
+                            titleColor: '#888880',
+                            bodyColor: '#f0ece0',
+                            padding: 10,
+                            callbacks: {
+                                label: ctx => ' $' + ctx.parsed.y.toLocaleString('en-US',{minimumFractionDigits:2})
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(46,46,46,0.6)', drawBorder: false },
+                            ticks: {
+                                color: '#555550',
+                                font: { size: 11 },
+                                maxTicksLimit: 8,
+                                maxRotation: 0,
+                            }
+                        },
+                        y: {
+                            position: 'right',
+                            grid: { color: 'rgba(46,46,46,0.6)', drawBorder: false },
+                            ticks: {
+                                color: '#888880',
+                                font: { size: 11 },
+                                callback: v => '$' + v.toLocaleString('en-US')
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        document.getElementById('chart-loading').style.display = 'none';
+        canvas.style.display = 'block';
+
+    } catch (err) {
+        document.getElementById('chart-loading').style.display = 'none';
+        const errEl = document.getElementById('chart-error');
+        errEl.style.display = 'block';
+        errEl.innerHTML = `
+            <div style="font-size:1.5rem;margin-bottom:8px;">⚠</div>
+            <strong>Could not load chart data</strong><br>
+            <span style="color:var(--text-muted);font-size:0.8rem;">${err.message}</span><br>
+            <span style="color:var(--text-muted);font-size:0.75rem;margin-top:6px;display:block;">
+                Check your internet connection — freegoldapi.com may be temporarily unavailable
+            </span>`;
+    }
+}
+
+/* toggle buttons */
+document.querySelectorAll('.chart-toggle button').forEach(btn => {
+    btn.addEventListener('click', () => loadChart(parseInt(btn.dataset.days)));
+});
+
+/* load on page ready */
+loadChart(30);
 
 {% endif %}
 </script>
