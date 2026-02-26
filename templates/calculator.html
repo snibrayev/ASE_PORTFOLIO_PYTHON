@@ -1,0 +1,1485 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+/* ── full-height layout ── */
+.calc-page {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 120px);
+    min-height: 560px;
+    margin: -2.5rem -2rem;
+    font-family: var(--font-body);
+}
+
+/* ── analysis panel ── */
+.calc-analysis {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.4s ease, padding 0.3s ease;
+    flex-shrink: 0;
+}
+.calc-analysis.open {
+    max-height: 340px;
+    overflow-y: auto;
+}
+.calc-analysis::-webkit-scrollbar { width: 4px; }
+.calc-analysis::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.analysis-inner {
+    padding: 20px 28px 24px;
+}
+.analysis-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+.analysis-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+}
+.analysis-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: color var(--transition), background var(--transition);
+}
+.analysis-close:hover { color: var(--danger); background: rgba(224,92,92,0.1); }
+
+/* step list */
+.step-list { display: flex; flex-direction: column; gap: 10px; }
+.step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    opacity: 0;
+    transform: translateY(8px);
+    animation: stepIn 0.3s ease forwards;
+}
+@keyframes stepIn {
+    to { opacity: 1; transform: translateY(0); }
+}
+.step-num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--accent-glow);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-size: 0.65rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+.step-body {
+    flex: 1;
+}
+.step-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 3px;
+}
+.step-math {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 10px;
+    display: inline-block;
+}
+.step-note {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 3px;
+    font-style: italic;
+}
+.analysis-result {
+    margin-top: 14px;
+    padding: 12px 16px;
+    background: var(--accent-glow);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* intersection hover cursor */
+.canvas-intersect-hover { cursor: pointer !important; }
+
+/* ── main split ── */
+.calc-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* ── sidebar ── */
+.calc-sidebar {
+    width: 300px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.calc-sidebar-header {
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.calc-sidebar-title {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+}
+.calc-sidebar-sub {
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+/* ── expression list ── */
+.expr-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 0;
+}
+.expr-list::-webkit-scrollbar { width: 4px; }
+.expr-list::-webkit-scrollbar-track { background: transparent; }
+.expr-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.expr-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    transition: background var(--transition);
+}
+.expr-row:hover { background: var(--surface-2); }
+.expr-row.error-row { background: rgba(224,92,92,0.06); }
+
+.expr-color-swatch {
+    width: 4px;
+    align-self: stretch;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: width var(--transition);
+}
+.expr-row:hover .expr-color-swatch { width: 6px; }
+
+.expr-num {
+    width: 28px;
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    padding: 14px 0;
+}
+
+.expr-input-wrap {
+    flex: 1;
+    padding: 10px 8px 10px 4px;
+}
+.expr-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-family: 'Courier New', monospace;
+    font-size: 0.92rem;
+    line-height: 1.4;
+    caret-color: var(--accent);
+}
+.expr-input::placeholder { color: var(--text-muted); font-style: italic; }
+
+.expr-error-msg {
+    font-size: 0.68rem;
+    color: var(--danger);
+    padding: 0 8px 6px 36px;
+    display: none;
+}
+.expr-row.error-row .expr-error-msg { display: block; }
+
+.expr-delete {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity var(--transition), color var(--transition);
+    flex-shrink: 0;
+    margin-right: 6px;
+}
+.expr-row:hover .expr-delete { opacity: 1; }
+.expr-delete:hover { color: var(--danger); }
+
+/* add expression button */
+.add-expr-btn {
+    margin: 10px 14px;
+    padding: 9px;
+    background: var(--surface-2);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: border-color var(--transition), color var(--transition), background var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: calc(100% - 28px);
+}
+.add-expr-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-glow);
+}
+
+/* ── info panel below expressions ── */
+.calc-info {
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+}
+.calc-info-title {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+.syntax-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+.syntax-chip {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 0.68rem;
+    font-family: 'Courier New', monospace;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: border-color var(--transition), color var(--transition);
+}
+.syntax-chip:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── canvas area ── */
+.calc-canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: var(--bg);
+    cursor: crosshair;
+}
+
+#graph-canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+}
+
+/* ── toolbar overlay ── */
+.calc-toolbar {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 10;
+}
+.toolbar-btn {
+    width: 36px; height: 36px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+.toolbar-btn:hover {
+    background: var(--surface-2);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+.toolbar-sep {
+    height: 1px;
+    background: var(--border);
+    margin: 2px 4px;
+}
+
+/* ── coordinate readout ── */
+.coord-readout {
+    position: absolute;
+    bottom: 14px;
+    left: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 12px;
+    font-size: 0.72rem;
+    font-family: 'Courier New', monospace;
+    color: var(--text-muted);
+    z-index: 10;
+    letter-spacing: 0.04em;
+}
+.coord-readout span { color: var(--text-secondary); }
+
+/* ── view range readout ── */
+.range-readout {
+    position: absolute;
+    bottom: 14px;
+    right: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 12px;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    z-index: 10;
+    letter-spacing: 0.04em;
+    text-align: right;
+}
+
+@media (max-width: 700px) {
+    .calc-sidebar { width: 240px; }
+    .calc-page { height: calc(100vh - 110px); }
+}
+</style>
+
+<div class="calc-page">
+    <div class="calc-body">
+
+        {# ── SIDEBAR ── #}
+        <div class="calc-sidebar">
+            <div class="calc-sidebar-header">
+                <div>
+                    <div class="calc-sidebar-title">GRAPHER</div>
+                    <div class="calc-sidebar-sub">Graphing Calculator</div>
+                </div>
+            </div>
+
+            <div class="expr-list" id="expr-list">
+                {# rows injected by JS #}
+            </div>
+
+            <button class="add-expr-btn" id="add-expr-btn">
+                <span style="font-size:1.1rem;">+</span> Add Expression
+            </button>
+
+            <div class="calc-info">
+                <div class="calc-info-title">Syntax Reference</div>
+                <div class="syntax-chips" id="syntax-chips">
+                    <span class="syntax-chip" data-insert="x^2">x^2</span>
+                    <span class="syntax-chip" data-insert="sqrt(x)">sqrt(x)</span>
+                    <span class="syntax-chip" data-insert="sin(x)">sin(x)</span>
+                    <span class="syntax-chip" data-insert="cos(x)">cos(x)</span>
+                    <span class="syntax-chip" data-insert="tan(x)">tan(x)</span>
+                    <span class="syntax-chip" data-insert="abs(x)">abs(x)</span>
+                    <span class="syntax-chip" data-insert="log(x)">log(x)</span>
+                    <span class="syntax-chip" data-insert="exp(x)">exp(x)</span>
+                    <span class="syntax-chip" data-insert="PI">π</span>
+                    <span class="syntax-chip" data-insert="E">e</span>
+                    <span class="syntax-chip" data-insert="floor(x)">floor(x)</span>
+                    <span class="syntax-chip" data-insert="ceil(x)">ceil(x)</span>
+                </div>
+            </div>
+        </div>
+
+        {# ── CANVAS ── #}
+        <div class="calc-canvas-wrap" id="canvas-wrap">
+            <canvas id="graph-canvas"></canvas>
+
+            {# toolbar #}
+            <div class="calc-toolbar">
+                <button class="toolbar-btn" id="btn-zoom-in"  title="Zoom In">+</button>
+                <button class="toolbar-btn" id="btn-zoom-out" title="Zoom Out">−</button>
+                <div class="toolbar-sep"></div>
+                <button class="toolbar-btn" id="btn-reset"    title="Reset View">⌂</button>
+                <button class="toolbar-btn" id="btn-grid"     title="Toggle Grid">⊞</button>
+            </div>
+
+            {# coordinate readout #}
+            <div class="coord-readout">
+                x: <span id="coord-x">0.00</span> &nbsp; y: <span id="coord-y">0.00</span>
+            </div>
+
+            {# range readout #}
+            <div class="range-readout" id="range-readout">
+                —
+            </div>
+        </div>
+    </div>
+
+    {# ── ANALYSIS PANEL ── #}
+    <div class="calc-analysis" id="calc-analysis">
+        <div class="analysis-inner">
+            <div class="analysis-header">
+                <div class="analysis-title" id="analysis-title">Analysis</div>
+                <button class="analysis-close" id="analysis-close">✕</button>
+            </div>
+            <div class="step-list" id="step-list"></div>
+            <div class="analysis-result" id="analysis-result" style="display:none;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════
+   GRAPHING CALCULATOR ENGINE
+   ══════════════════════════════════════════════ */
+
+const canvas  = document.getElementById('graph-canvas');
+const ctx     = canvas.getContext('2d');
+const wrap    = document.getElementById('canvas-wrap');
+
+// ── palette of line colors ──
+const COLORS = [
+    '#e8c84a', // gold
+    '#5b9bd5', // blue
+    '#4caf7d', // green
+    '#e05c5c', // red
+    '#b07ddc', // purple
+    '#e8954a', // orange
+    '#4acce8', // cyan
+    '#e84ab0', // pink
+];
+
+// ── viewport state ──
+let vp = {
+    cx: 0,      // center x in math coords
+    cy: 0,      // center y in math coords
+    scale: 60,  // pixels per unit
+};
+
+let showGrid  = true;
+let isDragging = false;
+let dragStart  = { x: 0, y: 0 };
+let vpAtDrag   = { cx: 0, cy: 0 };
+let dragMoved  = false; // true if mouse moved significantly during drag
+
+// ── expressions ──
+let expressions = [];
+let exprCounter  = 0;
+
+/* ── math↔canvas coordinate transforms ── */
+function mathToCanvas(mx, my) {
+    const w = canvas.width, h = canvas.height;
+    return {
+        x: w/2 + (mx - vp.cx) * vp.scale,
+        y: h/2 - (my - vp.cy) * vp.scale,
+    };
+}
+function canvasToMath(cx, cy) {
+    const w = canvas.width, h = canvas.height;
+    return {
+        x: vp.cx + (cx - w/2) / vp.scale,
+        y: vp.cy - (cy - h/2) / vp.scale,
+    };
+}
+
+/* ── resize canvas to fill wrapper ── */
+function resizeCanvas() {
+    canvas.width  = wrap.clientWidth;
+    canvas.height = wrap.clientHeight;
+    render();
+}
+
+/* ── safe expression evaluator ── */
+function makeEvalFn(expr) {
+    let e = expr.trim();
+
+    // Step 1: implicit multiplication BEFORE expanding to Math.*
+    // so we only deal with user-typed tokens like: 4x, 2(, )(, x(
+    // 4x → 4*x
+    e = e.replace(/(\d)\s*([a-zA-Z])/g, '$1*$2');
+    // 4( → 4*(
+    e = e.replace(/(\d)\s*\(/g, '$1*(');
+    // )( → )*(
+    e = e.replace(/\)\s*\(/g, ')*(');
+    // )x → )*x   but NOT if followed by a dot (won't happen before Math. expansion)
+    e = e.replace(/\)\s*([a-zA-Z])/g, ')*$1');
+
+    // Step 2: expand ^ and named functions/constants into JS equivalents
+    e = e
+        .replace(/\^/g,        '**')
+        .replace(/\bsqrt\b/g,  'Math.sqrt')
+        .replace(/\bsin\b/g,   'Math.sin')
+        .replace(/\bcos\b/g,   'Math.cos')
+        .replace(/\btan\b/g,   'Math.tan')
+        .replace(/\basin\b/g,  'Math.asin')
+        .replace(/\bacos\b/g,  'Math.acos')
+        .replace(/\batan\b/g,  'Math.atan')
+        .replace(/\babs\b/g,   'Math.abs')
+        .replace(/\blog\b/g,   'Math.log10')
+        .replace(/\bln\b/g,    'Math.log')
+        .replace(/\bexp\b/g,   'Math.exp')
+        .replace(/\bfloor\b/g, 'Math.floor')
+        .replace(/\bceil\b/g,  'Math.ceil')
+        .replace(/\bround\b/g, 'Math.round')
+        .replace(/\bmax\b/g,   'Math.max')
+        .replace(/\bmin\b/g,   'Math.min')
+        .replace(/\bPI\b/g,    'Math.PI')
+        .replace(/\bE\b/g,     'Math.E');
+
+    // Step 3: strip any "y =" or "f(x) =" prefix the user might type
+    e = e.replace(/^\s*(y\s*=|f\s*\(\s*x\s*\)\s*=)\s*/i, '');
+
+    try {
+        const fn = new Function('x', `"use strict"; return ${e};`);
+        fn(1); // runtime test
+        return { fn, error: null };
+    } catch(err) {
+        return { fn: null, error: err.message };
+    }
+}
+
+/* ── render everything ── */
+/* ══════════════════════════════════════════
+   ANALYSIS PANEL
+   ══════════════════════════════════════════ */
+
+// store all rendered intersection points for click hit-testing
+let renderedIntersections = [];
+// store enclosed regions for click hit-testing
+let renderedRegions = [];
+
+// debounce helper — delays expensive recomputation until typing pauses
+function debounce(fn, ms) {
+    let timer;
+    return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
+}
+const debouncedRecompute = debounce(() => { recomputeIntersections(); render(); }, 400);
+
+function openAnalysis(title, steps, result) {
+    const panel = document.getElementById('calc-analysis');
+    document.getElementById('analysis-title').textContent = title;
+
+    const list = document.getElementById('step-list');
+    list.innerHTML = '';
+    steps.forEach((s, i) => {
+        const div = document.createElement('div');
+        div.className = 'step';
+        div.style.animationDelay = (i * 0.07) + 's';
+        div.innerHTML = `
+            <div class="step-num">${i + 1}</div>
+            <div class="step-body">
+                <div class="step-label">${s.label}</div>
+                <div class="step-math">${s.math}</div>
+                ${s.note ? `<div class="step-note">${s.note}</div>` : ''}
+            </div>`;
+        list.appendChild(div);
+    });
+
+    const res = document.getElementById('analysis-result');
+    if (result) {
+        res.textContent = result;
+        res.style.display = 'block';
+    } else {
+        res.style.display = 'none';
+    }
+
+    panel.classList.add('open');
+    panel.scrollTop = 0;
+}
+
+document.getElementById('analysis-close').addEventListener('click', () => {
+    document.getElementById('calc-analysis').classList.remove('open');
+});
+
+/* ── generate step-by-step for intersection of two expressions ── */
+function analyseIntersection(exprA, exprB, ix, iy) {
+    const fa = exprA.text, fb = exprB.text;
+
+    const steps = [
+        {
+            label: 'Set the two expressions equal',
+            math: `${fa} = ${fb}`,
+            note: 'An intersection occurs where both functions have the same y-value.'
+        },
+        {
+            label: 'Rearrange to f(x) − g(x) = 0',
+            math: `(${fa}) − (${fb}) = 0`,
+            note: 'We move everything to one side and look for roots.'
+        },
+        {
+            label: 'Solve numerically (bisection method)',
+            math: `x ≈ ${ix.toFixed(6)}`,
+            note: 'The root was refined to 10 decimal places using 42 iterations of bisection.'
+        },
+        {
+            label: 'Substitute x back to find y',
+            math: `y = ${fa.replace(/x/g, `(${ix.toFixed(6)})`)} ≈ ${iy.toFixed(6)}`,
+            note: null
+        },
+        {
+            label: 'Intersection point',
+            math: `(${ix.toFixed(4)},  ${iy.toFixed(4)})`,
+            note: 'Rounded to 4 decimal places for display.'
+        }
+    ];
+
+    openAnalysis(
+        `Intersection: ${fa} ∩ ${fb}`,
+        steps,
+        `✓  Point of intersection: x = ${ix.toFixed(6)},  y = ${iy.toFixed(6)}`
+    );
+}
+
+/* ── generate step-by-step for enclosed area between two expressions ── */
+function analyseArea(exprA, exprB, x1, x2) {
+    // exprA = top curve, exprB = bottom curve
+    const fa = exprA.text, fb = exprB.text;
+    if (x1 > x2) [x1, x2] = [x2, x1];
+
+    // numerical integration (Simpson's rule, n=1000)
+    const n = 1000;
+    const h = (x2 - x1) / n;
+    let area = 0;
+    for (let i = 0; i <= n; i++) {
+        const x  = x1 + i * h;
+        let da;
+        try { da = Math.abs(exprA.fn(x) - exprB.fn(x)); } catch(e) { continue; }
+        if (!isFinite(da)) continue;
+        const w = (i === 0 || i === n) ? 1 : (i % 2 === 0 ? 2 : 4);
+        area += w * da;
+    }
+    area *= h / 3;
+
+    const steps = [
+        {
+            label: 'Identify the bounding functions',
+            math: `Top: ${fa}   Bottom: ${fb}`,
+            note: 'We integrate the absolute difference between the two curves.'
+        },
+        {
+            label: 'Find the integration bounds',
+            math: `x = ${x1.toFixed(4)}  to  x = ${x2.toFixed(4)}`,
+            note: 'These are the x-coordinates of the intersection points that enclose the region.'
+        },
+        {
+            label: 'Set up the definite integral',
+            math: `∫[${x1.toFixed(3)}, ${x2.toFixed(3)}] |(${fa}) − (${fb})| dx`,
+            note: null
+        },
+        {
+            label: "Apply Simpson's Rule (n = 1000 intervals)",
+            math: `≈ (h/3) × [f(x₀) + 4f(x₁) + 2f(x₂) + ... + f(xₙ)]`,
+            note: `Step size h = (${x2.toFixed(4)} − ${x1.toFixed(4)}) / 1000 = ${h.toFixed(6)}`
+        },
+        {
+            label: 'Enclosed area',
+            math: `Area ≈ ${area.toFixed(6)} square units`,
+            note: null
+        }
+    ];
+
+    openAnalysis(
+        `Enclosed Area: ${fa}  &  ${fb}`,
+        steps,
+        `✓  Area = ${area.toFixed(6)} square units`
+    );
+}
+
+/* ── click handler: hit-test intersections then check for enclosed region ── */
+wrap.addEventListener('click', e => {
+    if (dragMoved) return; // don't fire if user was panning
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+
+    const HIT_RADIUS = 18; // px
+
+    // 1. Check intersection hit
+    for (const pt of renderedIntersections) {
+        const pc = mathToCanvas(pt.x, pt.y);
+        const dist = Math.hypot(cx - pc.x, cy - pc.y);
+        if (dist < HIT_RADIUS) {
+            analyseIntersection(pt.exprA, pt.exprB, pt.x, pt.y);
+            return;
+        }
+    }
+
+    // 2. Check if click lands inside a shaded enclosed region
+    const mpt = canvasToMath(cx, cy);
+    for (const region of renderedRegions) {
+        if (cx < region.cxMin - 4 || cx > region.cxMax + 4) continue;
+        if (mpt.x < region.x1 - 0.01 || mpt.x > region.x2 + 0.01) continue;
+        // check y is between the two bounding curves at click x
+        let yTop, yBot;
+        try { yTop = region.exprTop.fn(mpt.x); } catch(e) { continue; }
+        try { yBot = region.exprBot.fn(mpt.x); } catch(e) { continue; }
+        if (!isFinite(yTop) || !isFinite(yBot)) continue;
+        if (mpt.y >= yBot - 0.01 && mpt.y <= yTop + 0.01) {
+            analyseArea(region.exprTop, region.exprBot, region.x1, region.x2);
+            return;
+        }
+    }
+});
+
+/* ── change cursor when hovering over an intersection ── */
+wrap.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    const HIT_RADIUS = 18;
+    const onPoint = renderedIntersections.some(pt => {
+        const pc = mathToCanvas(pt.x, pt.y);
+        return Math.hypot(cx - pc.x, cy - pc.y) < HIT_RADIUS;
+    });
+    // also change cursor when hovering inside a shaded region
+    const mhov = canvasToMath(cx, cy);
+    const onRegion = !onPoint && renderedRegions.some(region => {
+        if (cx < region.cxMin - 4 || cx > region.cxMax + 4) return false;
+        if (mhov.x < region.x1 || mhov.x > region.x2) return false;
+        let yTop, yBot;
+        try { yTop = region.exprTop.fn(mhov.x); } catch(e) { return false; }
+        try { yBot = region.exprBot.fn(mhov.x); } catch(e) { return false; }
+        if (!isFinite(yTop) || !isFinite(yBot)) return false;
+        return mhov.y >= yBot - 0.01 && mhov.y <= yTop + 0.01;
+    });
+    wrap.style.cursor = (onPoint || onRegion) ? 'pointer' : (isDragging ? 'grabbing' : 'crosshair');
+});
+
+
+
+/* ── blend two hex colors ── */
+function blendColors(hexA, hexB, t) {
+    const parse = h => [
+        parseInt(h.slice(1,3),16),
+        parseInt(h.slice(3,5),16),
+        parseInt(h.slice(5,7),16)
+    ];
+    const [rA,gA,bA] = parse(hexA), [rB,gB,bB] = parse(hexB);
+    const r = Math.round(rA + (rB-rA)*t);
+    const g = Math.round(gA + (gB-gA)*t);
+    const b = Math.round(bA + (bB-bA)*t);
+    return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+}
+
+/* ── draw an intersection marker with coordinates label ── */
+function drawIntersection(mx, my, colorA, colorB) {
+    const pt = mathToCanvas(mx, my);
+    const px = pt.x, py = pt.y;
+
+    // outer ring — blended color between both lines
+    ctx.beginPath();
+    ctx.arc(px, py, 8, 0, Math.PI * 2);
+    ctx.strokeStyle = colorA;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(px, py, 5, 0, Math.PI * 2);
+    ctx.strokeStyle = colorB;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // white fill center dot
+    ctx.beginPath();
+    ctx.arc(px, py, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+
+    // coordinate label
+    const lx = parseFloat(mx.toFixed(3));
+    const ly = parseFloat(my.toFixed(3));
+    const label = `(${lx}, ${ly})`;
+
+    // pick label position: prefer top-right, avoid canvas edges
+    let tx = px + 12, ty = py - 12;
+    if (tx + label.length * 6 > canvas.width - 6) tx = px - 12 - label.length * 6;
+    if (ty < 14) ty = py + 22;
+
+    // background pill
+    const pad = 4;
+    const tw  = ctx.measureText(label).width + pad * 2;
+    const th  = 14;
+    ctx.fillStyle = 'rgba(15,15,15,0.85)';
+    ctx.beginPath();
+    ctx.roundRect(tx - pad, ty - th + 2, tw, th + 2, 4);
+    ctx.fill();
+
+    ctx.strokeStyle = colorA;
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    ctx.fillStyle = '#f0f0ee';
+    ctx.font = '10px "Courier New", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(label, tx, ty);
+}
+
+/* ── recompute all intersections over full math range ── */
+function recomputeIntersections() {
+    renderedIntersections = [];
+    const visible = expressions.filter(e => e.fn && e.visible);
+    for (let i = 0; i < visible.length; i++) {
+        for (let j = i + 1; j < visible.length; j++) {
+            const pts = findIntersectionsGlobal(visible[i].fn, visible[j].fn);
+            pts.forEach(pt => renderedIntersections.push({
+                x: pt.x, y: pt.y,
+                exprA: visible[i], exprB: visible[j]
+            }));
+        }
+    }
+}
+
+/* ── scan x=-500..500 for intersections, viewport-independent ── */
+function findIntersectionsGlobal(fnA, fnB) {
+    const XMIN = -500, XMAX = 500, STEPS = 5000;
+    const dx = (XMAX - XMIN) / STEPS;
+    const results = [];
+    // Track last non-zero d separately to avoid double-firing after exact roots
+    let lastNZd = null, lastNZx = null;
+
+    for (let i = 0; i <= STEPS; i++) {
+        const x = XMIN + i * dx;
+        let d; try { d = fnA(x) - fnB(x); } catch(e) { lastNZd = null; continue; }
+        if (!isFinite(d)) { lastNZd = null; continue; }
+
+        if (Math.abs(d) < 1e-9) {
+            // Landed exactly on a root
+            let ry; try { ry = fnA(x); } catch(e) { continue; }
+            if (isFinite(ry) && !results.some(p => Math.abs(p.x - x) < 1e-4))
+                results.push({ x, y: ry });
+        } else if (lastNZd !== null && lastNZd * d < 0) {
+            // Sign change since last non-zero sample — bisect to find root
+            let lo = lastNZx, hi = x, dlo = lastNZd;
+            for (let k = 0; k < 54; k++) {
+                const m = (lo + hi) / 2;
+                let dm; try { dm = fnA(m) - fnB(m); } catch(e) { break; }
+                if (Math.abs(dm) < 1e-12) { lo = hi = m; break; }
+                if (dlo * dm < 0) { hi = m; } else { lo = m; dlo = dm; }
+            }
+            const rx = (lo + hi) / 2;
+            let ry; try { ry = fnA(rx); } catch(e) { lastNZd = d; lastNZx = x; continue; }
+            if (isFinite(ry) && !results.some(p => Math.abs(p.x - rx) < 1e-4))
+                results.push({ x: rx, y: ry });
+        }
+
+        // Only update lastNZ when d is meaningfully non-zero
+        if (Math.abs(d) > 1e-9) { lastNZd = d; lastNZx = x; }
+    }
+    return results;
+}
+
+/* ── shade enclosed regions ── */
+function drawEnclosedRegions() {
+    renderedRegions = [];
+    const visible = expressions.filter(e => e.fn && e.visible);
+    if (visible.length < 2 || renderedIntersections.length < 2) return;
+
+    // Get all intersection x-values as cell boundaries
+    const xs = [...new Set(
+        renderedIntersections.map(p => Math.round(p.x * 1e7) / 1e7)
+    )].sort((a, b) => a - b);
+
+    for (let k = 0; k < xs.length - 1; k++) {
+        const x1 = xs[k], x2 = xs[k+1];
+        if (x2 - x1 < 1e-8) continue;
+        const xm = (x1 + x2) / 2;
+
+        // evaluate all visible fns at midpoint, sort by y
+        const vals = [];
+        for (const e of visible) {
+            let y; try { y = e.fn(xm); } catch(_) { continue; }
+            if (isFinite(y)) vals.push({e, y});
+        }
+        vals.sort((a, b) => a.y - b.y);
+
+        for (let m = 0; m < vals.length - 1; m++) {
+            const eBot = vals[m].e, eTop = vals[m+1].e;
+            const gap = vals[m+1].y - vals[m].y;
+            if (gap < 1e-6) continue;
+
+            // Both boundary x-values must have a real intersection that directly
+            // involves BOTH eTop and eBot (they meet each other), OR a third function
+            // passes between them there (closing the region from outside).
+            const tol = Math.max((x2 - x1) * 0.03, 0.003);
+
+            function boundaryValid(xEdge) {
+                // Case A: eTop and eBot intersect each other near this edge
+                const directClose = renderedIntersections.some(p =>
+                    Math.abs(p.x - xEdge) < tol &&
+                    ((p.exprA === eTop && p.exprB === eBot) ||
+                     (p.exprA === eBot && p.exprB === eTop)));
+                if (directClose) return true;
+
+                // Case B: a third function passes between eTop and eBot at xEdge
+                let yT, yB;
+                try { yT = eTop.fn(xEdge); yB = eBot.fn(xEdge); } catch(_) { return false; }
+                if (!isFinite(yT) || !isFinite(yB)) return false;
+                const lo = Math.min(yT, yB), hi = Math.max(yT, yB);
+                const g = hi - lo;
+                // Third function must pass WELL inside the gap (not just near edge)
+                return visible.some(e => {
+                    if (e === eTop || e === eBot) return false;
+                    let y; try { y = e.fn(xEdge); } catch(_) { return false; }
+                    return isFinite(y) && y > lo + g * 0.05 && y < hi - g * 0.05;
+                });
+            }
+
+            if (!boundaryValid(x1) || !boundaryValid(x2)) continue;
+
+            // Sanity: the gap at midpoint must be LARGER than at both ends
+            // (region must narrow toward its boundaries, not widen)
+            let yTL, yBL, yTR, yBR;
+            try { yTL = eTop.fn(x1); yBL = eBot.fn(x1); } catch(_) { continue; }
+            try { yTR = eTop.fn(x2); yBR = eBot.fn(x2); } catch(_) { continue; }
+            if (!isFinite(yTL)||!isFinite(yBL)||!isFinite(yTR)||!isFinite(yBR)) continue;
+            const gL = Math.abs(yTL - yBL), gR = Math.abs(yTR - yBR);
+            // Both ends must be narrower than mid (true enclosed region)
+            if (gL >= gap || gR >= gap) continue;
+
+            // Draw fill
+            const STEPS = Math.min(500, Math.ceil((x2-x1) * vp.scale * 2));
+            const sdx = (x2-x1)/STEPS;
+            const col = blendColors(eBot.color, eTop.color, 0.5);
+
+            ctx.beginPath();
+            let started = false;
+            for (let s = 0; s <= STEPS; s++) {
+                const x = x1 + s*sdx;
+                let y; try { y = eTop.fn(x); } catch(_) { continue; }
+                if (!isFinite(y)) continue;
+                const p = mathToCanvas(x, y);
+                started ? ctx.lineTo(p.x, p.y) : (ctx.moveTo(p.x, p.y), started=true);
+            }
+            for (let s = STEPS; s >= 0; s--) {
+                const x = x1 + s*sdx;
+                let y; try { y = eBot.fn(x); } catch(_) { continue; }
+                if (!isFinite(y)) continue;
+                const p = mathToCanvas(x, y);
+                ctx.lineTo(p.x, p.y);
+            }
+            ctx.closePath();
+            ctx.fillStyle = col + '30';
+            ctx.fill();
+            ctx.strokeStyle = col + '40';
+            ctx.lineWidth = 0.6;
+            ctx.stroke();
+
+            renderedRegions.push({
+                x1, x2,
+                cxMin: mathToCanvas(x1,0).x,
+                cxMax: mathToCanvas(x2,0).x,
+                exprTop: eTop, exprBot: eBot
+            });
+        }
+    }
+}
+
+
+function render() {
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    // background
+    ctx.fillStyle = getComputedStyle(document.documentElement)
+        .getPropertyValue('--bg').trim() || '#0f0f0f';
+    ctx.fillRect(0, 0, W, H);
+
+    if (showGrid) drawGrid(W, H);
+    drawAxes(W, H);
+
+    const visible = expressions.filter(e => e.fn && e.visible);
+
+    // shade enclosed regions (drawn under the curves) — uses cached renderedIntersections
+    drawEnclosedRegions();
+
+    // redraw curves on top of shading
+    expressions.forEach(expr => {
+        if (!expr.fn || !expr.visible) return;
+        drawFunction(expr.fn, expr.color);
+    });
+
+    // draw intersection markers only for points currently visible on screen
+    const xLeft = canvasToMath(0, 0).x, xRight = canvasToMath(canvas.width, 0).x;
+    const yTop  = canvasToMath(0, 0).y, yBot    = canvasToMath(0, canvas.height).y;
+    renderedIntersections.forEach(pt => {
+        if (pt.x < xLeft - 1 || pt.x > xRight + 1) return; // off-screen, skip marker
+        if (pt.y < yBot  - 1 || pt.y > yTop  + 1) return;
+        drawIntersection(pt.x, pt.y, pt.exprA.color, pt.exprB.color);
+    });
+
+    // update range readout
+    const tl = canvasToMath(0, 0);
+    const br = canvasToMath(W, H);
+    document.getElementById('range-readout').textContent =
+        `x [${tl.x.toFixed(1)}, ${br.x.toFixed(1)}]  y [${br.y.toFixed(1)}, ${tl.y.toFixed(1)}]`;
+}
+
+/* ── draw grid lines ── */
+function drawGrid(W, H) {
+    // choose a nice grid step
+    const rawStep = 1 / vp.scale * 80; // target ~80px between lines
+    const mag  = Math.pow(10, Math.floor(Math.log10(rawStep)));
+    const norm = rawStep / mag;
+    const step = norm < 2 ? mag : norm < 5 ? 2*mag : 5*mag;
+
+    const tl = canvasToMath(0, 0);
+    const br = canvasToMath(W, H);
+
+    ctx.strokeStyle = 'rgba(46,46,46,0.8)';
+    ctx.lineWidth   = 1;
+
+    // vertical lines
+    const x0 = Math.ceil(tl.x / step) * step;
+    for (let x = x0; x <= br.x; x += step) {
+        const px = mathToCanvas(x, 0).x;
+        ctx.beginPath();
+        ctx.moveTo(px, 0);
+        ctx.lineTo(px, H);
+        ctx.stroke();
+    }
+    // horizontal lines
+    const y0 = Math.ceil(br.y / step) * step;
+    for (let y = y0; y <= tl.y; y += step) {
+        const py = mathToCanvas(0, y).y;
+        ctx.beginPath();
+        ctx.moveTo(0, py);
+        ctx.lineTo(W, py);
+        ctx.stroke();
+    }
+
+    // tick labels
+    ctx.fillStyle   = 'rgba(136,136,128,0.7)';
+    ctx.font        = '10px "Courier New", monospace';
+    ctx.textAlign   = 'center';
+
+    const axisX = Math.max(0, Math.min(W, mathToCanvas(0, 0).x));
+    const axisY = Math.max(0, Math.min(H, mathToCanvas(0, 0).y));
+
+    // x-axis labels
+    for (let x = x0; x <= br.x; x += step) {
+        if (Math.abs(x) < step * 0.01) continue;
+        const px = mathToCanvas(x, 0).x;
+        const ly = Math.min(axisY + 14, H - 6);
+        const label = Number.isInteger(x) ? x.toString() : x.toFixed(1);
+        ctx.fillText(label, px, ly);
+    }
+    // y-axis labels
+    ctx.textAlign = 'right';
+    for (let y = y0; y <= tl.y; y += step) {
+        if (Math.abs(y) < step * 0.01) continue;
+        const py = mathToCanvas(0, y).y;
+        const lx = Math.max(axisX - 4, 24);
+        const label = Number.isInteger(y) ? y.toString() : y.toFixed(1);
+        ctx.fillText(label, lx, py + 4);
+    }
+}
+
+/* ── draw axes ── */
+function drawAxes(W, H) {
+    const origin = mathToCanvas(0, 0);
+
+    ctx.strokeStyle = 'rgba(80,80,76,0.9)';
+    ctx.lineWidth   = 1.5;
+
+    // x axis
+    ctx.beginPath();
+    ctx.moveTo(0, origin.y);
+    ctx.lineTo(W, origin.y);
+    ctx.stroke();
+
+    // y axis
+    ctx.beginPath();
+    ctx.moveTo(origin.x, 0);
+    ctx.lineTo(origin.x, H);
+    ctx.stroke();
+
+    // axis labels
+    ctx.fillStyle = 'rgba(136,136,128,0.8)';
+    ctx.font      = 'bold 11px "Courier New", monospace';
+    ctx.textAlign = 'left';
+    if (origin.x > 0 && origin.x < W - 16) {
+        ctx.fillText('x', W - 14, Math.max(Math.min(origin.y - 6, H - 8), 10));
+    }
+    if (origin.y > 10 && origin.y < H) {
+        ctx.textAlign = 'left';
+        ctx.fillText('y', Math.max(Math.min(origin.x + 6, W - 14), 4), 12);
+    }
+
+    // origin dot
+    ctx.fillStyle = 'rgba(136,136,128,0.6)';
+    ctx.beginPath();
+    ctx.arc(origin.x, origin.y, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+/* ── draw a function ── */
+function drawFunction(fn, color) {
+    const W = canvas.width;
+    const STEPS = W * 2; // 2 samples per pixel for smoothness
+    const xLeft  = canvasToMath(0, 0).x;
+    const xRight = canvasToMath(W, 0).x;
+    const dx = (xRight - xLeft) / STEPS;
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth   = 2.2;
+    ctx.lineJoin    = 'round';
+    ctx.lineCap     = 'round';
+
+    let drawing = false;
+    let prevY = null;
+
+    ctx.beginPath();
+    for (let i = 0; i <= STEPS; i++) {
+        const mx = xLeft + i * dx;
+        let my;
+        try { my = fn(mx); } catch(e) { drawing = false; continue; }
+
+        if (!isFinite(my) || isNaN(my)) { drawing = false; prevY = null; continue; }
+
+        // detect vertical asymptotes: if jump > 100 units, lift pen
+        if (prevY !== null && Math.abs(my - prevY) > 100) {
+            drawing = false;
+        }
+
+        const pt = mathToCanvas(mx, my);
+
+        // skip points outside canvas with some margin
+        if (pt.y < -2000 || pt.y > canvas.height + 2000) {
+            drawing = false; prevY = my; continue;
+        }
+
+        if (!drawing) {
+            ctx.moveTo(pt.x, pt.y);
+            drawing = true;
+        } else {
+            ctx.lineTo(pt.x, pt.y);
+        }
+        prevY = my;
+    }
+    ctx.stroke();
+}
+
+/* ══════════════════════════════════════════
+   EXPRESSION MANAGEMENT
+   ══════════════════════════════════════════ */
+
+function createExpression(exprStr = '', colorIdx = null) {
+    const id    = ++exprCounter;
+    const color = COLORS[(expressions.length) % COLORS.length];
+    const expr  = { id, text: exprStr, color, fn: null, error: null, visible: true };
+    expressions.push(expr);
+    renderExprRow(expr);
+    if (exprStr) compileExpr(expr);
+    return expr;
+}
+
+function renderExprRow(expr) {
+    const list = document.getElementById('expr-list');
+    const idx  = expressions.indexOf(expr) + 1;
+
+    const row = document.createElement('div');
+    row.className  = 'expr-row';
+    row.dataset.id = expr.id;
+
+    row.innerHTML = `
+        <div class="expr-color-swatch" style="background:${expr.color};" data-id="${expr.id}"></div>
+        <div class="expr-num">${idx}</div>
+        <div class="expr-input-wrap">
+            <input class="expr-input" type="text" placeholder="y = f(x) e.g. x^2" value="${expr.text}" spellcheck="false" autocomplete="off"/>
+            <div class="expr-error-msg"></div>
+        </div>
+        <button class="expr-delete" title="Remove">×</button>
+    `;
+
+    list.appendChild(row);
+
+    const input  = row.querySelector('.expr-input');
+    const errMsg = row.querySelector('.expr-error-msg');
+    const delBtn = row.querySelector('.expr-delete');
+
+    input.addEventListener('input', () => {
+        expr.text = input.value.trim();
+        compileExpr(expr, row, errMsg);
+        render();
+    });
+
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            createExpression();
+            focusLastExpr();
+        }
+    });
+
+    // clicking the bottom area of the list (below all rows) creates a new slot
+    input.addEventListener('focus', () => {
+        // if this is the last row and it already has content, prime a new slot on blur
+        input._hadContent = input.value.trim().length > 0;
+    });
+
+    delBtn.addEventListener('click', () => {
+        const i = expressions.indexOf(expr);
+        if (expressions.length === 1) {
+            // clear instead of delete if last
+            expr.text = ''; expr.fn = null; expr.error = null;
+            input.value = '';
+            row.classList.remove('error-row');
+            render(); return;
+        }
+        if (i > -1) expressions.splice(i, 1);
+        row.remove();
+        renumberRows();
+        recomputeIntersections();
+        render();
+    });
+}
+
+function compileExpr(expr, row, errMsg) {
+    row = row || document.querySelector(`.expr-row[data-id="${expr.id}"]`);
+    errMsg = errMsg || row?.querySelector('.expr-error-msg');
+
+    if (!expr.text) {
+        expr.fn = null; expr.error = null;
+        row?.classList.remove('error-row');
+        return;
+    }
+
+    const result = makeEvalFn(expr.text);
+    if (result.error) {
+        expr.fn = null; expr.error = result.error;
+        row?.classList.add('error-row');
+        if (errMsg) errMsg.textContent = 'Syntax error';
+    } else {
+        // test for runtime errors
+        try {
+            result.fn(1);
+            expr.fn = result.fn; expr.error = null;
+            row?.classList.remove('error-row');
+            if (errMsg) errMsg.textContent = '';
+        } catch(e) {
+            expr.fn = null; expr.error = e.message;
+            row?.classList.add('error-row');
+            if (errMsg) errMsg.textContent = 'Error: ' + e.message;
+        }
+    }
+    // recompute intersections after a short pause (debounced to avoid lag while typing)
+    debouncedRecompute();
+}
+
+function renumberRows() {
+    document.querySelectorAll('.expr-row').forEach((row, i) => {
+        row.querySelector('.expr-num').textContent = i + 1;
+    });
+}
+
+function focusLastExpr() {
+    const inputs = document.querySelectorAll('.expr-input');
+    if (inputs.length) inputs[inputs.length - 1].focus();
+}
+
+/* ══════════════════════════════════════════
+   INTERACTION — PAN & ZOOM
+   ══════════════════════════════════════════ */
+
+/* mouse pan */
+wrap.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    isDragging = true;
+    dragMoved  = false;
+    dragStart  = { x: e.clientX, y: e.clientY };
+    vpAtDrag   = { cx: vp.cx, cy: vp.cy };
+    wrap.style.cursor = 'grabbing';
+});
+
+window.addEventListener('mousemove', e => {
+    // coordinate readout
+    const rect = canvas.getBoundingClientRect();
+    const mx = canvasToMath(e.clientX - rect.left, e.clientY - rect.top);
+    document.getElementById('coord-x').textContent = mx.x.toFixed(3);
+    document.getElementById('coord-y').textContent = mx.y.toFixed(3);
+
+    if (!isDragging) return;
+    const dx = e.clientX - dragStart.x;
+    const dy = e.clientY - dragStart.y;
+    if (Math.hypot(dx, dy) > 4) dragMoved = true;
+    vp.cx = vpAtDrag.cx - dx / vp.scale;
+    vp.cy = vpAtDrag.cy + dy / vp.scale;
+    render();
+});
+
+window.addEventListener('mouseup', () => {
+    isDragging = false;
+    wrap.style.cursor = 'crosshair';
+});
+
+/* scroll to zoom */
+wrap.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect  = canvas.getBoundingClientRect();
+    const mx    = canvasToMath(e.clientX - rect.left, e.clientY - rect.top);
+
+    const factor = e.deltaY < 0 ? 1.12 : 0.89;
+    vp.scale = Math.max(4, Math.min(2000, vp.scale * factor));
+
+    // zoom toward mouse position
+    vp.cx = mx.x - (e.clientX - rect.left - canvas.width  / 2) / vp.scale;
+    vp.cy = mx.y + (e.clientY - rect.top  - canvas.height / 2) / vp.scale;
+
+    render();
+}, { passive: false });
+
+/* touch support */
+let lastTouchDist = null;
+
+wrap.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) {
+        isDragging = true;
+        dragStart  = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        vpAtDrag   = { cx: vp.cx, cy: vp.cy };
+    } else if (e.touches.length === 2) {
+        isDragging = false;
+        lastTouchDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+    }
+}, { passive: true });
+
+wrap.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (e.touches.length === 1 && isDragging) {
+        const dx = e.touches[0].clientX - dragStart.x;
+        const dy = e.touches[0].clientY - dragStart.y;
+        vp.cx = vpAtDrag.cx - dx / vp.scale;
+        vp.cy = vpAtDrag.cy + dy / vp.scale;
+        render();
+    } else if (e.touches.length === 2) {
+        const dist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+        if (lastTouchDist) {
+            const factor = dist / lastTouchDist;
+            vp.scale = Math.max(4, Math.min(2000, vp.scale * factor));
+            render();
+        }
+        lastTouchDist = dist;
+    }
+}, { passive: false });
+
+wrap.addEventListener('touchend', () => { isDragging = false; lastTouchDist = null; });
+
+/* toolbar buttons */
+document.getElementById('btn-zoom-in').addEventListener('click', () => {
+    vp.scale = Math.min(2000, vp.scale * 1.3); render();
+});
+document.getElementById('btn-zoom-out').addEventListener('click', () => {
+    vp.scale = Math.max(4, vp.scale / 1.3); render();
+});
+document.getElementById('btn-reset').addEventListener('click', () => {
+    vp = { cx: 0, cy: 0, scale: 60 }; render();
+});
+document.getElementById('btn-grid').addEventListener('click', () => {
+    showGrid = !showGrid; render();
+});
+
+/* add expression button */
+document.getElementById('add-expr-btn').addEventListener('click', () => {
+    createExpression();
+    focusLastExpr();
+});
+
+/* clicking anywhere in the expr-list BELOW the last row creates a new slot —
+   exactly like Desmos: if the click target is the list container itself
+   (not a child element) or the empty space after rows, add a new expression */
+document.getElementById('expr-list').addEventListener('click', e => {
+    // only fire if the click landed directly on the list or below the last row
+    const rows = document.querySelectorAll('.expr-row');
+    if (!rows.length) return;
+
+    const lastRow = rows[rows.length - 1];
+    const lastRowBottom = lastRow.getBoundingClientRect().bottom;
+
+    // if click is below the last row, or on the bare list background
+    if (e.clientY > lastRowBottom || e.target === document.getElementById('expr-list')) {
+        // only create if the last expression has content (mirrors Desmos behaviour)
+        const lastExpr = expressions[expressions.length - 1];
+        if (lastExpr && lastExpr.text.trim() === '') {
+            // last slot is already empty — just focus it
+            focusLastExpr();
+        } else {
+            createExpression();
+            focusLastExpr();
+        }
+    }
+});
+
+/* syntax chips — insert into focused input */
+let lastFocusedInput = null;
+document.addEventListener('focusin', e => {
+    if (e.target.classList.contains('expr-input')) lastFocusedInput = e.target;
+});
+
+document.querySelectorAll('.syntax-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+        const input = lastFocusedInput ||
+            document.querySelector('.expr-input:last-of-type');
+        if (!input) return;
+        const pos = input.selectionStart;
+        const val = input.value;
+        const ins = chip.dataset.insert;
+        input.value = val.slice(0, pos) + ins + val.slice(pos);
+        input.selectionStart = input.selectionEnd = pos + ins.length;
+        input.dispatchEvent(new Event('input'));
+        input.focus();
+    });
+});
+
+/* ── init ── */
+window.addEventListener('resize', resizeCanvas);
+
+// start with one blank expression
+createExpression('');
+
+resizeCanvas();
+recomputeIntersections();
+focusLastExpr();
+</script>
+{% endblock %}

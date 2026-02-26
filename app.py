@@ -198,7 +198,9 @@ def weather():
         weather_params = {
             "latitude": lat,
             "longitude": lon,
-            "current_weather": True
+            "current_weather": True,
+            "hourly": "relativehumidity_2m",
+            "current_weather_units": True
         }
 
         w_resp = requests.get(weather_url, params=weather_params, timeout=10)
@@ -213,11 +215,81 @@ def weather():
                 "temperature": cw.get("temperature"),
                 "windspeed": cw.get("windspeed"),
                 "winddirection": cw.get("winddirection"),
+                "weathercode": cw.get("weathercode", 0),
+                "is_day": cw.get("is_day", 1),
                 "time": cw.get("time")
             }
 
     return render_template("weather.html", form=form, weather_data=weather_data, error=error)
 
+
+
+# --- WORLD WEATHER SNAPSHOT (for landing cards) ---
+# Fetches current weather for major cities in one batched Open-Meteo call.
+# No API key required.
+
+WORLD_CITIES = [
+    {"name": "Dubai",        "lat": 25.2048,  "lon": 55.2708},
+    {"name": "London",       "lat": 51.5074,  "lon": -0.1278},
+    {"name": "New York",     "lat": 40.7128,  "lon": -74.0060},
+    {"name": "Tokyo",        "lat": 35.6762,  "lon": 139.6503},
+    {"name": "Sydney",       "lat": -33.8688, "lon": 151.2093},
+    {"name": "Paris",        "lat": 48.8566,  "lon": 2.3522},
+    {"name": "Moscow",       "lat": 55.7558,  "lon": 37.6176},
+    {"name": "Cape Town",    "lat": -33.9249, "lon": 18.4241},
+]
+
+@app.route('/api/world-weather')
+def world_weather():
+    # Build a batched request — Open-Meteo supports multiple lat/lon as comma-separated
+    lats = ",".join(str(c["lat"]) for c in WORLD_CITIES)
+    lons = ",".join(str(c["lon"]) for c in WORLD_CITIES)
+
+    try:
+        resp = requests.get(
+            "https://api.open-meteo.com/v1/forecast",
+            params={
+                "latitude":        lats,
+                "longitude":       lons,
+                "current_weather": True,
+            },
+            timeout=10
+        )
+        data = resp.json()
+
+        # When multiple locations are queried, Open-Meteo returns a list
+        if not isinstance(data, list):
+            data = [data]
+
+        results = []
+        for city, cw_data in zip(WORLD_CITIES, data):
+            cw = cw_data.get("current_weather", {})
+            code = int(cw.get("weathercode", 0))
+
+            # Map WMO code to label
+            if code == 0:              label = "Clear Sky"
+            elif code in [1, 2]:       label = "Partly Cloudy"
+            elif code == 3:            label = "Overcast"
+            elif code in [45, 48]:     label = "Foggy"
+            elif code in [51,53,55,56,57]: label = "Drizzle"
+            elif code in [61,63,65,66,67,80,81,82]: label = "Rain"
+            elif code in [71,73,75,77,85,86]: label = "Snow"
+            elif code in [95,96,99]:   label = "Thunderstorm"
+            else:                      label = "Cloudy"
+
+            results.append({
+                "city":        city["name"],
+                "temperature": cw.get("temperature"),
+                "windspeed":   cw.get("windspeed"),
+                "weathercode": code,
+                "is_day":      cw.get("is_day", 1),
+                "label":       label,
+            })
+
+        return jsonify(results)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
 
 # --- MARKET DASHBOARD ---
 
@@ -307,6 +379,13 @@ def gold_history():
     except Exception as e:
         return jsonify({"error": str(e)}), 502
 
+
+
+# --- GRAPHING CALCULATOR ---
+
+@app.route('/calculator')
+def calculator():
+    return render_template('calculator.html')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5003)

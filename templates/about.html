@@ -1,10 +1,448 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="centered-justified">
-    <p>
-        I am a Senior student at ACS who is an apsiring maker
-        I am planning to major in Industrial Design
-    </p>
+<style>
+/* ── layout ── */
+.about-page {
+    max-width: 860px;
+    margin: 0 auto;
+}
+
+/* ── hero ── */
+.about-hero {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 52px 56px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+/* grid texture bg */
+.about-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.04;
+    background-size: 28px 28px;
+    background-image:
+        linear-gradient(to right, var(--accent) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--accent) 1px, transparent 1px);
+    pointer-events: none;
+}
+/* gold top bar */
+.about-hero::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 80px; height: 3px;
+    background: var(--accent);
+}
+
+.about-hero-inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: flex-start;
+    gap: 48px;
+}
+
+/* avatar monogram */
+.about-avatar {
+    flex-shrink: 0;
+    width: 96px; height: 96px;
+    background: var(--accent-glow);
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 2.2rem;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    opacity: 0;
+    animation: fadeUp 0.6s ease 0.1s forwards;
+}
+
+.about-hero-text {
+    flex: 1;
+    opacity: 0;
+    animation: fadeUp 0.6s ease 0.2s forwards;
+}
+
+.about-eyebrow {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+}
+
+.about-name {
+    font-family: var(--font-display);
+    font-size: 3.4rem;
+    letter-spacing: 0.06em;
+    color: var(--text-primary);
+    line-height: 1;
+    margin-bottom: 14px;
+}
+
+.about-tagline {
+    font-size: 1rem;
+    font-weight: 300;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    max-width: 540px;
+    margin-bottom: 24px;
+}
+
+/* pill tags */
+.about-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.about-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    transition: border-color var(--transition), color var(--transition);
+}
+.about-tag:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── countries timeline ── */
+.about-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 36px 40px;
+    margin-bottom: 20px;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards;
+}
+.about-section:nth-child(2) { animation-delay: 0.25s; }
+.about-section:nth-child(3) { animation-delay: 0.35s; }
+.about-section:nth-child(4) { animation-delay: 0.45s; }
+.about-section:nth-child(5) { animation-delay: 0.55s; }
+
+.section-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.section-body {
+    font-size: 0.97rem;
+    font-weight: 300;
+    color: var(--text-secondary);
+    line-height: 1.85;
+}
+.section-body strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* ── countries grid ── */
+.countries-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+    margin-top: 20px;
+}
+.country-chip {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: border-color var(--transition), transform var(--transition);
+}
+.country-chip:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+}
+.country-flag { font-size: 1.3rem; }
+.country-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.04em;
+}
+
+/* ── interests ── */
+.interests-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 20px;
+}
+.interest-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 20px 16px;
+    text-align: center;
+    transition: border-color var(--transition), transform var(--transition);
+}
+.interest-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+}
+.interest-icon { font-size: 1.8rem; margin-bottom: 8px; }
+.interest-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+.interest-desc {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+/* ── pull quote ── */
+.about-quote {
+    border-left: 3px solid var(--accent);
+    padding: 6px 0 6px 20px;
+    margin: 22px 0 0;
+    font-size: 1.05rem;
+    font-style: italic;
+    font-weight: 300;
+    color: var(--text-secondary);
+    line-height: 1.7;
+}
+.about-quote strong { color: var(--accent); font-style: normal; font-weight: 600; }
+
+/* ── stat strip ── */
+.about-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    margin-top: 20px;
+}
+.about-stat {
+    padding: 20px 16px;
+    text-align: center;
+    border-right: 1px solid var(--border);
+    background: var(--surface-2);
+}
+.about-stat:last-child { border-right: none; }
+.about-stat-num {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    line-height: 1;
+}
+.about-stat-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-top: 5px;
+}
+
+@media (max-width: 680px) {
+    .about-hero-inner { flex-direction: column; gap: 24px; }
+    .about-hero { padding: 36px 28px; }
+    .about-section { padding: 28px 24px; }
+    .about-name { font-size: 2.4rem; }
+    .interests-grid { grid-template-columns: repeat(2, 1fr); }
+    .about-stats { grid-template-columns: repeat(2, 1fr); }
+    .about-stat:nth-child(2) { border-right: none; }
+    .about-stat:nth-child(3) { border-top: 1px solid var(--border); }
+    .about-stat:nth-child(4) { border-top: 1px solid var(--border); border-right: none; }
+}
+</style>
+
+<div class="about-page">
+
+    {# ── HERO ── #}
+    <div class="about-hero">
+        <div class="about-hero-inner">
+            <div class="about-avatar">SI</div>
+            <div class="about-hero-text">
+                <div class="about-eyebrow">About the Developer</div>
+                <div class="about-name">Solomon Ibrayev</div>
+                <div class="about-tagline">
+                    Grade 12 student at ACS, aspiring industrial designer, and someone who has called
+                    seven countries home. I build things — physical and digital — because I believe
+                    good design should make life measurably easier for the people using it.
+                </div>
+                <div class="about-tags">
+                    <span class="about-tag">🏀 Basketball</span>
+                    <span class="about-tag">✏️ Industrial Design</span>
+                    <span class="about-tag">⚙️ Human Interaction Design</span>
+                    <span class="about-tag">🌍 6 Countries</span>
+                    <span class="about-tag">🖥️ Flask & Python</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ── SNAPSHOT STATS ── #}
+    <div class="about-section" style="padding: 0; overflow:hidden;">
+        <div class="about-stats" style="margin:0; border:none; border-radius:0;">
+            <div class="about-stat">
+                <div class="about-stat-num">6</div>
+                <div class="about-stat-label">Countries Lived In</div>
+            </div>
+            <div class="about-stat">
+                <div class="about-stat-num">12</div>
+                <div class="about-stat-label">Years of School</div>
+            </div>
+            <div class="about-stat">
+                <div class="about-stat-num">1</div>
+                <div class="about-stat-label">Major: Industrial Design</div>
+            </div>
+            <div class="about-stat">
+                <div class="about-stat-num">∞</div>
+                <div class="about-stat-label">Ideas in Progress</div>
+            </div>
+        </div>
+    </div>
+
+    {# ── BACKGROUND ── #}
+    <div class="about-section">
+        <div class="section-label">Background</div>
+        <div class="section-body">
+            Growing up, moving wasn't the exception — it was just life. I was born into a family that
+            relocated frequently, and by the time I reached Grade 12, I had lived across
+            <strong>six countries</strong>: the UAE, the United States, Jerusalem, Turkey,
+            Kyrgyzstan, and Belarus. Each place left something behind — a different way of
+            seeing a problem, a different standard of what "normal" looks like, a different set of
+            people who showed me how the world works from their corner of it.
+            <br><br>
+            Living abroad also meant constantly navigating currency conversions, exchange rates, and
+            weather conditions that were wildly different from wherever I'd just come from. Those
+            everyday frictions are part of why this portfolio exists — tools I actually understand
+            as a user, built by someone learning to be a developer.
+        </div>
+
+        <div class="countries-grid">
+            <div class="country-chip"><span class="country-flag">🇦🇪</span><span class="country-name">UAE</span></div>
+            <div class="country-chip"><span class="country-flag">🇺🇸</span><span class="country-name">United States</span></div>
+            <div class="country-chip"><span class="country-flag">🇵🇸</span><span class="country-name">Jerusalem</span></div>
+            <div class="country-chip"><span class="country-flag">🇹🇷</span><span class="country-name">Turkey</span></div>
+            <div class="country-chip"><span class="country-flag">🇰🇬</span><span class="country-name">Kyrgyzstan</span></div>
+            <div class="country-chip"><span class="country-flag">🇧🇾</span><span class="country-name">Belarus</span></div>
+        </div>
+    </div>
+
+    {# ── INTERESTS ── #}
+    <div class="about-section">
+        <div class="section-label">Interests & Passions</div>
+        <div class="section-body">
+            My interests sit at the intersection of the physical and the human. I am drawn to
+            <strong>industrial design</strong> — the discipline of creating objects that are not just
+            functional, but intuitive, honest, and built around the person using them.
+            Alongside that, I play <strong>basketball</strong> seriously, a sport that has taught me
+            as much about reading a situation and adapting quickly as any classroom has.
+        </div>
+
+        <div class="interests-grid">
+            <div class="interest-card">
+                <div class="interest-icon">🏀</div>
+                <div class="interest-title">Basketball</div>
+                <div class="interest-desc">Competitive hobby and a daily discipline in focus and adaptability.</div>
+            </div>
+            <div class="interest-card">
+                <div class="interest-icon">✏️</div>
+                <div class="interest-title">Industrial Design</div>
+                <div class="interest-desc">Designing physical products that are purposeful, not just beautiful.</div>
+            </div>
+            <div class="interest-card">
+                <div class="interest-icon">🤝</div>
+                <div class="interest-title">Human Interaction</div>
+                <div class="interest-desc">Understanding how people use things — and making that experience better.</div>
+            </div>
+            <div class="interest-card">
+                <div class="interest-icon">⚙️</div>
+                <div class="interest-title">Making Things</div>
+                <div class="interest-desc">From sketching concepts to building prototypes — the process matters.</div>
+            </div>
+            <div class="interest-card">
+                <div class="interest-icon">🖥️</div>
+                <div class="interest-title">Web Development</div>
+                <div class="interest-desc">Learning Flask & Python to bring digital ideas to life.</div>
+            </div>
+            <div class="interest-card">
+                <div class="interest-icon">🌍</div>
+                <div class="interest-title">Global Perspective</div>
+                <div class="interest-desc">Seven countries of context applied to everything I create.</div>
+            </div>
+        </div>
+    </div>
+
+    {# ── THIS PROJECT ── #}
+    <div class="about-section">
+        <div class="section-label">Why This Project</div>
+        <div class="section-body">
+            This Flask portfolio was built as part of my ASE class, and I chose to centre it around
+            a <strong>market and currency dashboard</strong> for a reason that felt personal. Having
+            lived across multiple countries, currency converters were something I used constantly —
+            not as a novelty, but out of genuine necessity. They were tools I understood
+            instinctively as a user. Building one from scratch gave me the chance to sit on the
+            other side of that experience and understand what actually goes into making something
+            that feels simple to use.
+        </div>
+        <div class="about-quote">
+            "The best design is the kind people don't notice — it just <strong>works</strong>,
+            exactly when they need it to."
+        </div>
+    </div>
+
+    {# ── LOOKING AHEAD ── #}
+    <div class="about-section">
+        <div class="section-label">Looking Ahead</div>
+        <div class="section-body">
+            After graduating from ACS, I intend to pursue a degree in <strong>Industrial Design</strong>.
+            My goal is to work at the boundary between physical products and the humans who use them —
+            designing things that are genuinely useful, not just aesthetically pleasing. The coding
+            skills I am building now are part of that: a designer who understands how digital systems
+            work is a more complete one.
+            <br><br>
+            If you're looking at this portfolio, you're seeing the beginning of that journey.
+        </div>
+    </div>
+
 </div>
 {% endblock %}

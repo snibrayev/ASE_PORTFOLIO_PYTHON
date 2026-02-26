@@ -4,10 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6d87f9fe-0b0d-4c80-9eb7-af0250f38b8e" name="Changes" comment="Feb_20_P2">
+    <list default="true" id="6d87f9fe-0b0d-4c80-9eb7-af0250f38b8e" name="Changes" comment="Feb_24">
+      <change afterPath="$PROJECT_DIR$/templates/calculator.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/market.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/market.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/about.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/about.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/base.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/rectangle.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/rectangle.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/weather.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/weather.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -142,7 +147,12 @@
       <workItem from="1770870934328" duration="3429000" />
       <workItem from="1771398958607" duration="1678000" />
       <workItem from="1771565430765" duration="1851000" />
-      <workItem from="1771907532391" duration="3108000" />
+      <workItem from="1771907532391" duration="3127000" />
+      <workItem from="1771918180329" duration="6321000" />
+      <workItem from="1771993776946" duration="12000" />
+      <workItem from="1772000390547" duration="1451000" />
+      <workItem from="1772039192761" duration="3842000" />
+      <workItem from="1772094365865" duration="1648000" />
     </task>
     <task id="LOCAL-00001" summary="Feb_10">
       <option name="closed" value="true" />
@@ -184,7 +194,15 @@
       <option name="project" value="LOCAL" />
       <updated>1771566859947</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="Feb_24">
+      <option name="closed" value="true" />
+      <created>1771911090830</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1771911090830</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -195,9 +213,10 @@
     <MESSAGE value="Feb_12" />
     <MESSAGE value="Feb_20" />
     <MESSAGE value="Feb_20_P2" />
-    <option name="LAST_COMMIT_MESSAGE" value="Feb_20_P2" />
+    <MESSAGE value="Feb_24" />
+    <option name="LAST_COMMIT_MESSAGE" value="Feb_24" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/ASE_PORTFOLIO$app.coverage" NAME="app Coverage Results" MODIFIED="1771910155716" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/ASE_PORTFOLIO$app.coverage" NAME="app Coverage Results" MODIFIED="1772095072269" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

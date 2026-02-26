@@ -1,48 +1,623 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+.rect-page {
+    max-width: 780px;
+    margin: 0 auto;
+}
 
-<div class="centered-justified">
-    <p>Calculate the area and perimeter of the rectangle</p>
+/* ── main card ── */
+.rect-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    position: relative;
+}
+.rect-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 60px; height: 3px;
+    background: var(--accent);
+}
 
-    <form action="{{ url_for('rectangle') }}" method="POST">
+/* ── two-col layout ── */
+.rect-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 380px;
+}
 
-        {{ form.hidden_tag() }}
+/* ── form side ── */
+.rect-form-side {
+    padding: 36px 36px 32px;
+    border-right: 1px solid var(--border);
+}
+.rect-form-side h2 {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    margin-bottom: 6px;
+    line-height: 1;
+}
+.rect-form-side p {
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 28px;
+}
+.rect-field { margin-bottom: 18px; }
+.rect-field label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 7px;
+}
+.rect-field input {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+.rect-field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.rect-field input::placeholder { color: var(--text-muted); }
 
-        <div class="form-group">
-            {{ form.length.label }}
-            {{ form.length(class="form-control", placeholder="Enter length") }}
-            {% if form.length.errors %}
-                <ul class="errors">{% for error in form.length.errors %}<li style="color: red;">{{ error }}</li>{% endfor %}</ul>
-            {% endif %}
+.rect-errors { list-style: none; padding: 0; margin: 4px 0 0; }
+.rect-errors li { font-size: 0.78rem; color: var(--danger); }
+
+.rect-btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+}
+.rect-btn {
+    flex: 1;
+    padding: 11px 10px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+}
+.rect-btn:hover { transform: translateY(-1px); }
+.rect-btn-area {
+    background: var(--accent);
+    color: #111;
+}
+.rect-btn-area:hover {
+    background: #f0d560;
+    box-shadow: 0 4px 16px rgba(232,200,74,0.25);
+}
+.rect-btn-perim {
+    background: var(--surface-2);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+}
+.rect-btn-perim:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* ── result badge ── */
+.rect-result {
+    margin-top: 18px;
+    padding: 14px 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    display: none;
+    animation: fadeUp 0.3s ease;
+}
+.rect-result.visible { display: block; }
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.rect-result-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+.rect-result-value {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    letter-spacing: 0.04em;
+    line-height: 1;
+}
+.rect-result-value.area-color   { color: var(--accent); }
+.rect-result-value.perim-color  { color: var(--info); }
+
+/* ── visualization side ── */
+.rect-viz-side {
+    padding: 36px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-2);
+    position: relative;
+    overflow: hidden;
+}
+
+/* dot-grid bg */
+.rect-viz-side::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.4;
+    background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+    background-size: 18px 18px;
+    pointer-events: none;
+}
+
+.viz-canvas-wrap {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 280px;
+}
+
+#rect-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    overflow: visible;
+}
+
+/* the main rectangle shape */
+#rect-shape {
+    fill: transparent;
+    stroke: var(--border);
+    stroke-width: 2;
+    transition: fill 0.4s ease, stroke 0.4s ease, stroke-width 0.3s ease, stroke-dasharray 0.5s ease;
+    stroke-dasharray: none;
+}
+#rect-shape.mode-area {
+    fill: rgba(232,200,74,0.18);
+    stroke: var(--accent);
+    stroke-width: 2;
+}
+#rect-shape.mode-perimeter {
+    fill: transparent;
+    stroke: var(--info);
+    stroke-width: 3;
+    animation: dash-march 1.2s linear infinite;
+}
+
+/* marching ants for perimeter */
+@keyframes dash-march {
+    to { stroke-dashoffset: -40; }
+}
+
+/* dimension labels */
+.dim-label {
+    font-family: var(--font-body);
+    font-size: 11px;
+    fill: var(--text-muted);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    transition: fill 0.3s ease;
+}
+.dim-label.active { fill: var(--accent); }
+
+/* dimension arrows */
+.dim-line {
+    stroke: var(--border);
+    stroke-width: 1;
+    transition: stroke 0.3s ease;
+}
+.dim-line.active { stroke: var(--accent); }
+
+/* corner dots */
+.corner-dot {
+    fill: var(--border);
+    transition: fill 0.3s ease, r 0.3s ease;
+}
+.corner-dot.active { fill: var(--accent); r: 4; }
+
+/* viz empty state */
+.viz-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    z-index: 2;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+.viz-empty-icon { font-size: 2rem; opacity: 0.3; }
+.viz-empty-text {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    opacity: 0.6;
+}
+
+/* viz mode badge */
+.viz-badge {
+    position: absolute;
+    top: 14px; right: 14px;
+    z-index: 2;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid transparent;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.viz-badge.visible { opacity: 1; }
+.viz-badge.area-badge {
+    background: rgba(232,200,74,0.12);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+.viz-badge.perim-badge {
+    background: rgba(91,155,213,0.12);
+    border-color: var(--info);
+    color: var(--info);
+}
+
+/* ── stat row below card ── */
+.rect-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 14px;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+.rect-stats.visible { opacity: 1; }
+.rect-stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 16px 14px;
+    text-align: center;
+}
+.rect-stat-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+}
+.rect-stat-val {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    letter-spacing: 0.04em;
+    color: var(--text-primary);
+}
+
+@media (max-width: 600px) {
+    .rect-layout { grid-template-columns: 1fr; }
+    .rect-form-side { border-right: none; border-bottom: 1px solid var(--border); }
+    .rect-stats { grid-template-columns: repeat(3, 1fr); }
+}
+</style>
+
+<div class="rect-page">
+    <div class="rect-card">
+        <div class="rect-layout">
+
+            {# ── FORM SIDE ── #}
+            <div class="rect-form-side">
+                <h2>Rectangle</h2>
+                <p>Area & Perimeter Calculator</p>
+
+                <form id="rect-form" action="{{ url_for('rectangle') }}" method="POST">
+                    {{ form.hidden_tag() }}
+
+                    <div class="rect-field">
+                        {{ form.length.label(text="Length") }}
+                        {{ form.length(class="", placeholder="e.g. 12", id="input-length") }}
+                        {% if form.length.errors %}
+                            <ul class="rect-errors">{% for e in form.length.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+                        {% endif %}
+                    </div>
+
+                    <div class="rect-field">
+                        {{ form.width.label(text="Width") }}
+                        {{ form.width(class="", placeholder="e.g. 8", id="input-width") }}
+                        {% if form.width.errors %}
+                            <ul class="rect-errors">{% for e in form.width.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+                        {% endif %}
+                    </div>
+
+                    <div class="rect-btn-row">
+                        {{ form.area(class="rect-btn rect-btn-area", id="btn-area") }}
+                        {{ form.perimeter(class="rect-btn rect-btn-perim", id="btn-perim") }}
+                    </div>
+                </form>
+
+                {# result badge #}
+                <div class="rect-result {% if area is not none or perimeter is not none %}visible{% endif %}" id="result-box">
+                    {% if area is not none %}
+                        <div class="rect-result-label">Area</div>
+                        <div class="rect-result-value area-color">{{ area }} <span style="font-family:var(--font-body);font-size:1rem;color:var(--text-muted);">units²</span></div>
+                    {% elif perimeter is not none %}
+                        <div class="rect-result-label">Perimeter</div>
+                        <div class="rect-result-value perim-color">{{ perimeter }} <span style="font-family:var(--font-body);font-size:1rem;color:var(--text-muted);">units</span></div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# ── VISUALIZATION SIDE ── #}
+            <div class="rect-viz-side">
+                {# mode badge #}
+                <div class="viz-badge {% if area is not none %}area-badge visible{% elif perimeter is not none %}perim-badge visible{% endif %}" id="viz-badge">
+                    {% if area is not none %}Area Fill{% elif perimeter is not none %}Perimeter{% endif %}
+                </div>
+
+                {# empty state #}
+                <div class="viz-empty" id="viz-empty" style="{% if area is not none or perimeter is not none %}opacity:0;{% endif %}">
+                    <div class="viz-empty-icon">📐</div>
+                    <div class="viz-empty-text">Enter dimensions to preview</div>
+                </div>
+
+                {# SVG canvas #}
+                <div class="viz-canvas-wrap">
+                    <svg id="rect-svg" viewBox="0 0 280 200" xmlns="http://www.w3.org/2000/svg">
+
+                        {# dimension arrows — width (top) #}
+                        <line id="arr-w-line" class="dim-line {% if area is not none or perimeter is not none %}active{% endif %}" x1="0" y1="0" x2="0" y2="0"/>
+                        <text id="arr-w-text" class="dim-label {% if area is not none or perimeter is not none %}active{% endif %}" text-anchor="middle">—</text>
+
+                        {# dimension arrows — height (right) #}
+                        <line id="arr-h-line" class="dim-line {% if area is not none or perimeter is not none %}active{% endif %}" x1="0" y1="0" x2="0" y2="0"/>
+                        <text id="arr-h-text" class="dim-label {% if area is not none or perimeter is not none %}active{% endif %}" text-anchor="middle">—</text>
+
+                        {# the rectangle #}
+                        <rect id="rect-shape"
+                            class="{% if area is not none %}mode-area{% elif perimeter is not none %}mode-perimeter{% endif %}"
+                            x="0" y="0" width="0" height="0" rx="1"/>
+
+                        {# corner dots #}
+                        <circle class="corner-dot {% if area is not none or perimeter is not none %}active{% endif %}" id="c-tl" cx="0" cy="0" r="3"/>
+                        <circle class="corner-dot {% if area is not none or perimeter is not none %}active{% endif %}" id="c-tr" cx="0" cy="0" r="3"/>
+                        <circle class="corner-dot {% if area is not none or perimeter is not none %}active{% endif %}" id="c-bl" cx="0" cy="0" r="3"/>
+                        <circle class="corner-dot {% if area is not none or perimeter is not none %}active{% endif %}" id="c-br" cx="0" cy="0" r="3"/>
+
+                        {# right-angle mark #}
+                        <path id="right-angle" d="" fill="none" stroke="var(--border)" stroke-width="1.2" opacity="0"/>
+
+                    </svg>
+                </div>
+            </div>
+
         </div>
-
-        <div class="form-group">
-            {{ form.width.label }}
-            {{ form.width(class="form-control", placeholder="Enter width") }}
-            {% if form.width.errors %}
-                <ul class="errors">{% for error in form.width.errors %}<li style="color: red;">{{ error }}</li>{% endfor %}</ul>
-            {% endif %}
-        </div>
-
-        <div class="button-group">
-            {{ form.area(class="btn btn-primary") }}
-            {{ form.perimeter(class="btn btn-secondary") }}
-        </div>
-
-    </form>
-
-    <div style="margin-top: 20px; font-size: 1.2em; font-weight: bold;">
-
-        {% if area is not none %}
-            <p style="color: green;">The Area is: {{ area }}</p>
-        {% endif %}
-
-        {% if perimeter is not none %}
-            <p style="color: blue;">The Perimeter is: {{ perimeter }}</p>
-        {% endif %}
-
     </div>
 
+    {# ── STATS STRIP ── #}
+    <div class="rect-stats {% if area is not none or perimeter is not none %}visible{% endif %}" id="stats-strip">
+        <div class="rect-stat">
+            <div class="rect-stat-label">Length</div>
+            <div class="rect-stat-val" id="stat-length">—</div>
+        </div>
+        <div class="rect-stat">
+            <div class="rect-stat-label">Width</div>
+            <div class="rect-stat-val" id="stat-width">—</div>
+        </div>
+        <div class="rect-stat">
+            <div class="rect-stat-label">Diagonal</div>
+            <div class="rect-stat-val" id="stat-diag">—</div>
+        </div>
+    </div>
 </div>
+
+<script>
+/* ─────────────────────────────────────────────
+   RECTANGLE VISUALIZATION
+   ───────────────────────────────────────────── */
+
+const SVG_W = 280, SVG_H = 200;
+const PAD   = 40;   // padding from svg edge for the rect
+const ARROW_OFFSET = 18; // distance of dimension lines from rect
+
+// elements
+const shape      = document.getElementById('rect-shape');
+const arrWLine   = document.getElementById('arr-w-line');
+const arrWText   = document.getElementById('arr-w-text');
+const arrHLine   = document.getElementById('arr-h-line');
+const arrHText   = document.getElementById('arr-h-text');
+const cTL        = document.getElementById('c-tl');
+const cTR        = document.getElementById('c-tr');
+const cBL        = document.getElementById('c-bl');
+const cBR        = document.getElementById('c-br');
+const rightAngle = document.getElementById('right-angle');
+const vizEmpty   = document.getElementById('viz-empty');
+const vizBadge   = document.getElementById('viz-badge');
+const statsStrip = document.getElementById('stats-strip');
+const statLen    = document.getElementById('stat-length');
+const statWid    = document.getElementById('stat-width');
+const statDiag   = document.getElementById('stat-diag');
+const inputLen   = document.getElementById('input-length');
+const inputWid   = document.getElementById('input-width');
+
+/* ── compute scaled rect that fits in SVG with padding ── */
+function computeRect(L, W) {
+    const maxW = SVG_W - PAD * 2 - ARROW_OFFSET * 2;
+    const maxH = SVG_H - PAD * 2 - ARROW_OFFSET * 2;
+
+    const scaleW = maxW / L;
+    const scaleH = maxH / W;
+    const scale  = Math.min(scaleW, scaleH, 8); // cap at 8px per unit
+
+    const rw = L * scale;
+    const rh = W * scale;
+    const rx = (SVG_W - rw) / 2;
+    const ry = (SVG_H - rh) / 2;
+
+    return { rx, ry, rw, rh };
+}
+
+/* ── draw the rectangle and dimension lines ── */
+function drawRect(L, W, mode) {
+    if (!L || !W || L <= 0 || W <= 0) {
+        // hide everything
+        shape.setAttribute('width', 0);
+        shape.setAttribute('height', 0);
+        vizEmpty.style.opacity = '1';
+        vizBadge.classList.remove('visible');
+        statsStrip.classList.remove('visible');
+        return;
+    }
+
+    vizEmpty.style.opacity = '0';
+    statsStrip.classList.add('visible');
+
+    const { rx, ry, rw, rh } = computeRect(L, W);
+
+    // position rect
+    shape.setAttribute('x', rx);
+    shape.setAttribute('y', ry);
+    shape.setAttribute('width', rw);
+    shape.setAttribute('height', rh);
+
+    // apply mode styling
+    shape.className = '';
+    if (mode === 'area') {
+        shape.classList.add('mode-area');
+        // perimeter dash: none
+        shape.style.strokeDasharray = 'none';
+        shape.style.strokeDashoffset = '0';
+    } else if (mode === 'perimeter') {
+        shape.classList.add('mode-perimeter');
+        // marching ants: dash length based on perimeter
+        const perim = 2 * (rw + rh);
+        shape.style.strokeDasharray = `${perim * 0.08} ${perim * 0.04}`;
+    } else {
+        shape.style.strokeDasharray = 'none';
+    }
+
+    // corner dots
+    const corners = [
+        [cTL, rx,      ry],
+        [cTR, rx + rw, ry],
+        [cBL, rx,      ry + rh],
+        [cBR, rx + rw, ry + rh],
+    ];
+    corners.forEach(([el, cx, cy]) => {
+        el.setAttribute('cx', cx);
+        el.setAttribute('cy', cy);
+        el.setAttribute('r', mode ? 4 : 3);
+        if (mode) el.classList.add('active'); else el.classList.remove('active');
+    });
+
+    // right-angle mark at bottom-left
+    const ras = 10;
+    rightAngle.setAttribute('d',
+        `M ${rx} ${ry+rh-ras} L ${rx+ras} ${ry+rh-ras} L ${rx+ras} ${ry+rh}`);
+    rightAngle.setAttribute('opacity', '0.6');
+
+    // width dimension line (above rect)
+    const wLineY = ry - ARROW_OFFSET;
+    arrWLine.setAttribute('x1', rx);
+    arrWLine.setAttribute('y1', wLineY);
+    arrWLine.setAttribute('x2', rx + rw);
+    arrWLine.setAttribute('y2', wLineY);
+    arrWText.setAttribute('x', rx + rw / 2);
+    arrWText.setAttribute('y', wLineY - 5);
+    arrWText.textContent = `L = ${L}`;
+    if (mode) { arrWLine.classList.add('active'); arrWText.classList.add('active'); }
+    else { arrWLine.classList.remove('active'); arrWText.classList.remove('active'); }
+
+    // height dimension line (right of rect)
+    const hLineX = rx + rw + ARROW_OFFSET;
+    arrHLine.setAttribute('x1', hLineX);
+    arrHLine.setAttribute('y1', ry);
+    arrHLine.setAttribute('x2', hLineX);
+    arrHLine.setAttribute('y2', ry + rh);
+    arrHText.setAttribute('x', hLineX + 14);
+    arrHText.setAttribute('y', ry + rh / 2 + 4);
+    arrHText.textContent = `W = ${W}`;
+    if (mode) { arrHLine.classList.add('active'); arrHText.classList.add('active'); }
+    else { arrHLine.classList.remove('active'); arrHText.classList.remove('active'); }
+
+    // stats strip
+    statLen.textContent  = L;
+    statWid.textContent  = W;
+    statDiag.textContent = Math.sqrt(L*L + W*W).toFixed(2);
+
+    // badge
+    vizBadge.className = 'viz-badge';
+    if (mode === 'area') {
+        vizBadge.classList.add('area-badge', 'visible');
+        vizBadge.textContent = 'Area Fill';
+    } else if (mode === 'perimeter') {
+        vizBadge.classList.add('perim-badge', 'visible');
+        vizBadge.textContent = 'Perimeter';
+    } else {
+        vizBadge.classList.remove('visible');
+    }
+}
+
+/* ── live preview as user types ── */
+function livePreview() {
+    const L = parseFloat(inputLen.value);
+    const W = parseFloat(inputWid.value);
+    drawRect(L, W, null);
+}
+
+inputLen.addEventListener('input', livePreview);
+inputWid.addEventListener('input', livePreview);
+
+/* ── on button click, set the mode before form submits ── */
+document.getElementById('btn-area').addEventListener('click', function() {
+    const L = parseFloat(inputLen.value);
+    const W = parseFloat(inputWid.value);
+    if (L > 0 && W > 0) drawRect(L, W, 'area');
+});
+
+document.getElementById('btn-perim').addEventListener('click', function() {
+    const L = parseFloat(inputLen.value);
+    const W = parseFloat(inputWid.value);
+    if (L > 0 && W > 0) drawRect(L, W, 'perimeter');
+});
+
+/* ── on page load: restore from server result ── */
+(function init() {
+    const L = parseFloat(inputLen.value) || 0;
+    const W = parseFloat(inputWid.value) || 0;
+
+    {% if area is not none %}
+        drawRect({{ form.length.data }}, {{ form.width.data }}, 'area');
+    {% elif perimeter is not none %}
+        drawRect({{ form.length.data }}, {{ form.width.data }}, 'perimeter');
+    {% else %}
+        if (L > 0 && W > 0) drawRect(L, W, null);
+    {% endif %}
+})();
+</script>
+
 {% endblock %}

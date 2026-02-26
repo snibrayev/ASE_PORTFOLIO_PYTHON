@@ -17,6 +17,9 @@
                 <li class="{% if request.path == url_for('home') %}active{% endif %}">
                     <a href="{{ url_for('home')}}">Home</a>
                 </li>
+                <li class="{% if request.path == url_for('about') %}active{% endif %}">
+                    <a href="{{ url_for('about')}}">About</a>
+                </li>
                 <li class="{% if request.path == url_for('rectangle') %}active{% endif %}">
                     <a href="{{ url_for('rectangle')}}">Rectangle</a>
                 </li>
@@ -25,6 +28,9 @@
                 </li>
                 <li class="{% if request.path == url_for('market') %}active{% endif %}">
                         <a href="{{ url_for('market') }}">Market</a>
+                </li>
+                <li class="{% if request.path == url_for('calculator') %}active{% endif %}">
+                        <a href="{{ url_for('calculator') }}">Calculator</a>
                 </li>
             </ul>
             <ul class="navbar-right">

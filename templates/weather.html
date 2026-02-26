@@ -1,52 +1,622 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="weather-page">
-  <h2 class="weather-title">Weather Lookup</h2>
-  <p class="weather-subtitle">Enter a city name to view live weather data.</p>
+<style>
+/* ── page ── */
+.wx-page { max-width: 860px; margin: 0 auto; }
 
-  <div class="weather-card">
-    <form method="post" class="weather-form">
-      {{ form.hidden_tag() }}
+/* ── search card ── */
+.wx-search-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 32px 36px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.wx-search-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 3px;
+    background: linear-gradient(90deg, var(--accent), transparent 60%);
+}
+.wx-search-card h2 {
+    font-family: var(--font-display);
+    font-size: 2.4rem;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin-bottom: 4px;
+    line-height: 1;
+}
+.wx-search-card p {
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 22px;
+}
+.wx-form { display: flex; gap: 10px; align-items: center; }
+.wx-form input {
+    flex: 1;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    padding: 11px 16px;
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+.wx-form input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.wx-form input::placeholder { color: var(--text-muted); }
+.wx-form button {
+    background: var(--accent);
+    color: #111;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 11px 26px;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background var(--transition), transform var(--transition);
+}
+.wx-form button:hover { background: #f0d560; transform: translateY(-1px); }
+.wx-error {
+    background: rgba(224,92,92,0.1);
+    border: 1px solid rgba(224,92,92,0.3);
+    border-radius: var(--radius-sm);
+    padding: 13px 16px;
+    color: #f08080;
+    font-size: 0.9rem;
+    margin-top: 14px;
+}
 
-      <label class="weather-label">{{ form.city.label.text }}</label>
-      {{ form.city(class="weather-input", placeholder="e.g., Abu Dhabi") }}
+/* ── world snapshot section ── */
+.snapshot-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+.snapshot-title {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+.snapshot-live {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+.snapshot-dot {
+    width: 6px; height: 6px;
+    background: var(--success);
+    border-radius: 50%;
+    animation: pulse 1.8s ease infinite;
+}
+@keyframes pulse {
+    0%,100%{opacity:1;transform:scale(1);}
+    50%{opacity:0.4;transform:scale(0.7);}
+}
 
-      {{ form.submit(class="weather-button") }}
-    </form>
+/* ── city news cards ── */
+.city-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 14px;
+    margin-bottom: 32px;
+}
+.city-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 18px 16px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+    opacity: 0;
+    animation: fadeUp 0.4s ease forwards;
+}
+.city-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.city-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 60px; height: 60px;
+    background: radial-gradient(circle, var(--accent-glow), transparent 70%);
+    pointer-events: none;
+}
+@keyframes fadeUp {
+    from{opacity:0;transform:translateY(14px);}
+    to{opacity:1;transform:translateY(0);}
+}
+/* stagger delays */
+.city-card:nth-child(1){animation-delay:0.05s}
+.city-card:nth-child(2){animation-delay:0.10s}
+.city-card:nth-child(3){animation-delay:0.15s}
+.city-card:nth-child(4){animation-delay:0.20s}
+.city-card:nth-child(5){animation-delay:0.25s}
+.city-card:nth-child(6){animation-delay:0.30s}
+.city-card:nth-child(7){animation-delay:0.35s}
+.city-card:nth-child(8){animation-delay:0.40s}
 
-    {% if error %}
-      <div class="weather-error">{{ error }}</div>
-    {% endif %}
+.city-card-icon { font-size: 1.8rem; margin-bottom: 8px; }
+.city-card-name {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    letter-spacing: 0.05em;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+.city-card-condition {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+}
+.city-card-temp {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+    line-height: 1;
+}
+.city-card-temp sup {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    vertical-align: super;
+}
+.city-card-wind {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+}
+.city-card-click {
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-top: 10px;
+    opacity: 0;
+    transition: opacity var(--transition);
+}
+.city-card:hover .city-card-click { opacity: 1; }
 
+/* skeleton loading cards */
+.city-card-skeleton {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 18px 16px;
+    animation: shimmer 1.4s ease infinite;
+}
+@keyframes shimmer {
+    0%,100%{opacity:0.4;} 50%{opacity:0.8;}
+}
+.skel-line {
+    background: var(--border);
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+/* ── RESULT CARD ── */
+.wx-result {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    animation: fadeUp 0.5s ease;
+    margin-bottom: 28px;
+}
+.wx-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 36px 40px;
+    position: relative;
+    min-height: 200px;
+    overflow: hidden;
+}
+.wx-hero-bg {
+    position: absolute; inset: 0; opacity: 0.06;
+    background-size: 30px 30px;
+    background-image:
+        linear-gradient(to right, var(--accent) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--accent) 1px, transparent 1px);
+}
+.wx-hero-left { position: relative; z-index: 1; }
+.wx-city-name {
+    font-family: var(--font-display);
+    font-size: 2.6rem;
+    letter-spacing: 0.06em;
+    color: var(--text-primary);
+    line-height: 1;
+    margin-bottom: 6px;
+}
+.wx-condition-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--accent-glow);
+    border: 1px solid var(--accent);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 18px;
+}
+.wx-temp-display {
+    font-family: var(--font-display);
+    font-size: 5rem;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    line-height: 1;
+}
+.wx-temp-display sup { font-size: 2rem; vertical-align: super; color: var(--text-muted); }
+.wx-graphic { position: relative; z-index: 1; width: 160px; height: 160px; flex-shrink: 0; }
+.wx-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--border);
+}
+.wx-stat {
+    padding: 20px 18px;
+    text-align: center;
+    border-right: 1px solid var(--border);
+    transition: background var(--transition);
+}
+.wx-stat:last-child { border-right: none; }
+.wx-stat:hover { background: var(--surface-2); }
+.wx-stat-icon { font-size: 1.3rem; margin-bottom: 6px; }
+.wx-stat-label {
+    font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--text-muted); margin-bottom: 5px;
+}
+.wx-stat-value {
+    font-family: var(--font-display);
+    font-size: 1.4rem; letter-spacing: 0.04em; color: var(--text-primary);
+}
+.wx-stat-unit { font-family: var(--font-body); font-size: 0.75rem; color: var(--text-muted); }
+.wx-compass-row {
+    padding: 24px 40px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 24px;
+}
+.wx-compass-label {
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;
+}
+.compass-wrap { position: relative; width: 60px; height: 60px; flex-shrink: 0; }
+.compass-ring { width:60px;height:60px;border:2px solid var(--border);border-radius:50%;position:absolute;inset:0; }
+.compass-dirs { position:absolute;inset:0;display:flex;align-items:center;justify-content:center; }
+.compass-n,.compass-s,.compass-e,.compass-w { position:absolute;font-size:0.6rem;font-weight:700;color:var(--text-muted);letter-spacing:0; }
+.compass-n{top:2px;left:50%;transform:translateX(-50%);}
+.compass-s{bottom:2px;left:50%;transform:translateX(-50%);}
+.compass-e{right:3px;top:50%;transform:translateY(-50%);}
+.compass-w{left:3px;top:50%;transform:translateY(-50%);}
+.compass-arrow {
+    position:absolute;top:50%;left:50%;width:2px;height:22px;
+    background:linear-gradient(to top,var(--accent),transparent);
+    transform-origin:bottom center;margin-left:-1px;margin-top:-22px;border-radius:2px;
+}
+.wind-info { flex: 1; }
+.wind-speed-big { font-family:var(--font-display);font-size:1.8rem;color:var(--text-primary);line-height:1; }
+.wind-direction-text { font-size:0.82rem;color:var(--text-muted);margin-top:3px; }
+.wx-footer {
+    padding:14px 40px;border-top:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;background:var(--surface-2);
+}
+.wx-footer-label { font-size:0.75rem;color:var(--text-muted);letter-spacing:0.06em; }
+.wx-footer-time { font-size:0.82rem;color:var(--text-secondary);font-variant-numeric:tabular-nums; }
+
+/* ── SVG animations ── */
+@keyframes spin-slow{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+@keyframes rain-fall{0%{transform:translateY(-10px);opacity:0;}60%{opacity:1;}100%{transform:translateY(40px);opacity:0;}}
+@keyframes snow-fall{0%{transform:translateY(-10px) translateX(0);opacity:0;}50%{opacity:1;}100%{transform:translateY(40px) translateX(6px);opacity:0;}}
+@keyframes lightning{0%,90%,100%{opacity:0;}92%,95%{opacity:1;}}
+@keyframes glow-pulse{0%,100%{opacity:0.3;}50%{opacity:0.7;}}
+@keyframes cloud-drift{0%,100%{transform:translateX(0);}50%{transform:translateX(4px);}}
+@keyframes fog-sweep{0%,100%{transform:translateX(0);opacity:0.5;}50%{transform:translateX(8px);opacity:0.8;}}
+.sun-rays{animation:spin-slow 12s linear infinite;transform-origin:80px 80px;}
+.sun-core{animation:glow-pulse 3s ease infinite;}
+.cloud-main{animation:cloud-drift 4s ease infinite;}
+.cloud-sec{animation:cloud-drift 5s ease infinite reverse;}
+.rain-drop{animation:rain-fall 1.2s ease infinite;}
+.rain-drop:nth-child(2){animation-delay:0.2s;}
+.rain-drop:nth-child(3){animation-delay:0.4s;}
+.rain-drop:nth-child(4){animation-delay:0.6s;}
+.rain-drop:nth-child(5){animation-delay:0.9s;}
+.snow-flake{animation:snow-fall 2s ease infinite;}
+.snow-flake:nth-child(2){animation-delay:0.3s;}
+.snow-flake:nth-child(3){animation-delay:0.7s;}
+.snow-flake:nth-child(4){animation-delay:1.1s;}
+.lightning-bolt{animation:lightning 3s ease infinite;}
+.fog-line{animation:fog-sweep 3s ease infinite;}
+.fog-line:nth-child(2){animation-delay:0.8s;animation-direction:reverse;}
+.fog-line:nth-child(3){animation-delay:1.6s;}
+
+@media(max-width:640px){
+    .wx-hero{flex-direction:column;padding:28px 24px;gap:20px;}
+    .wx-stats{grid-template-columns:repeat(2,1fr);}
+    .wx-stat:nth-child(2){border-right:none;}
+    .wx-compass-row{padding:20px 24px;}
+    .wx-footer{padding:14px 24px;}
+    .wx-city-name{font-size:2rem;}
+    .wx-temp-display{font-size:3.8rem;}
+    .city-grid{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+
+<div class="wx-page">
+
+    {# ── SEARCH ── #}
+    <div class="wx-search-card">
+        <h2>Weather Lookup</h2>
+        <p>Search any city — or click a card below</p>
+        <form method="POST" class="wx-form" id="wx-form">
+            {{ form.hidden_tag() }}
+            {{ form.city(class="", placeholder="e.g. Dubai, Tokyo, London…", id="city-input") }}
+            {{ form.submit(class="") }}
+        </form>
+        {% if error %}
+            <div class="wx-error">⚠ {{ error }}</div>
+        {% endif %}
+    </div>
+
+    {# ── RESULT (only shown after a search) ── #}
     {% if weather_data %}
-      <div class="weather-results">
-        <h3 class="weather-results-title">Weather in {{ weather_data.city }}</h3>
 
-        <div class="weather-grid">
-          <div class="weather-stat">
-            <div class="weather-stat-label">Temperature</div>
-            <div class="weather-stat-value">{{ weather_data.temperature }} °C</div>
-          </div>
+    {% set wcode = weather_data.weathercode | int %}
+    {% set is_day = weather_data.is_day %}
 
-          <div class="weather-stat">
-            <div class="weather-stat-label">Wind Speed</div>
-            <div class="weather-stat-value">{{ weather_data.windspeed }} km/h</div>
-          </div>
+    {% if wcode == 0 %}{% set wx_label="Clear Sky" %}{% set wx_graphic="clear" %}
+    {% elif wcode in [1,2] %}{% set wx_label="Partly Cloudy" %}{% set wx_graphic="partly_cloudy" %}
+    {% elif wcode == 3 %}{% set wx_label="Overcast" %}{% set wx_graphic="cloudy" %}
+    {% elif wcode in [45,48] %}{% set wx_label="Foggy" %}{% set wx_graphic="fog" %}
+    {% elif wcode in [51,53,55,56,57] %}{% set wx_label="Drizzle" %}{% set wx_graphic="drizzle" %}
+    {% elif wcode in [61,63,65,66,67,80,81,82] %}{% set wx_label="Rainy" %}{% set wx_graphic="rain" %}
+    {% elif wcode in [71,73,75,77,85,86] %}{% set wx_label="Snowy" %}{% set wx_graphic="snow" %}
+    {% elif wcode in [95,96,99] %}{% set wx_label="Thunderstorm" %}{% set wx_graphic="thunder" %}
+    {% else %}{% set wx_label="Variable" %}{% set wx_graphic="cloudy" %}{% endif %}
 
-          <div class="weather-stat">
-            <div class="weather-stat-label">Wind Direction</div>
-            <div class="weather-stat-value">{{ weather_data.winddirection }}°</div>
-          </div>
+    {% set wd = weather_data.winddirection | int %}
+    {% if wd < 23 or wd >= 338 %}{% set wx_dir="N" %}
+    {% elif wd < 68 %}{% set wx_dir="NE" %}
+    {% elif wd < 113 %}{% set wx_dir="E" %}
+    {% elif wd < 158 %}{% set wx_dir="SE" %}
+    {% elif wd < 203 %}{% set wx_dir="S" %}
+    {% elif wd < 248 %}{% set wx_dir="SW" %}
+    {% elif wd < 293 %}{% set wx_dir="W" %}
+    {% else %}{% set wx_dir="NW" %}{% endif %}
 
-          <div class="weather-stat">
-            <div class="weather-stat-label">Time</div>
-            <div class="weather-stat-value">{{ weather_data.time }}</div>
-          </div>
+    <div class="wx-result">
+        <div class="wx-hero">
+            <div class="wx-hero-bg"></div>
+            <div class="wx-hero-left">
+                <div class="wx-city-name">{{ weather_data.city | title }}</div>
+                <div class="wx-condition-badge">
+                    {% if wx_graphic=="clear" %}☀{% elif wx_graphic=="partly_cloudy" %}⛅
+                    {% elif wx_graphic=="cloudy" %}☁{% elif wx_graphic=="fog" %}🌫
+                    {% elif wx_graphic=="drizzle" %}🌦{% elif wx_graphic=="rain" %}🌧
+                    {% elif wx_graphic=="snow" %}❄{% elif wx_graphic=="thunder" %}⛈{% else %}🌤{% endif %}
+                    {{ wx_label }}{% if is_day == 0 %}&nbsp;· Night{% endif %}
+                </div>
+                <div class="wx-temp-display">{{ weather_data.temperature }}<sup>°C</sup></div>
+            </div>
+            <div class="wx-graphic">
+                {% if wx_graphic == "clear" %}
+                <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    {% if is_day %}<circle cx="80" cy="80" r="48" fill="#e8c84a" opacity="0.08" class="sun-core"/>
+                    <g class="sun-rays">{% for i in range(8) %}<line x1="80" y1="22" x2="80" y2="10" stroke="#e8c84a" stroke-width="3" stroke-linecap="round" transform="rotate({{ i*45 }} 80 80)"/>{% endfor %}</g>
+                    <circle cx="80" cy="80" r="28" fill="#e8c84a" opacity="0.95"/><circle cx="80" cy="80" r="22" fill="#f5d968"/>
+                    {% else %}<circle cx="85" cy="72" r="30" fill="#c8d8f0" opacity="0.9"/><circle cx="98" cy="65" r="24" fill="#1a1a1a"/>
+                    <circle cx="50" cy="50" r="2" fill="#c8d8f0" opacity="0.8"/><circle cx="120" cy="45" r="1.5" fill="#c8d8f0" opacity="0.6"/><circle cx="38" cy="90" r="1.5" fill="#c8d8f0" opacity="0.7"/><circle cx="130" cy="100" r="2" fill="#c8d8f0" opacity="0.5"/>{% endif %}
+                </svg>
+                {% elif wx_graphic == "partly_cloudy" %}
+                <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    {% if is_day %}<g class="sun-rays" style="opacity:0.7">{% for i in range(8) %}<line x1="55" y1="20" x2="55" y2="10" stroke="#e8c84a" stroke-width="2.5" stroke-linecap="round" transform="rotate({{ i*45 }} 55 55)"/>{% endfor %}</g><circle cx="55" cy="55" r="22" fill="#f5d968" opacity="0.9"/>
+                    {% else %}<circle cx="62" cy="58" r="22" fill="#c8d8f0" opacity="0.8"/><circle cx="72" cy="52" r="18" fill="#1a1a1a"/>{% endif %}
+                    <g class="cloud-main"><ellipse cx="95" cy="100" rx="30" ry="18" fill="#3a3a3a"/><ellipse cx="78" cy="105" rx="20" ry="14" fill="#3a3a3a"/><ellipse cx="112" cy="106" rx="16" ry="12" fill="#3a3a3a"/><ellipse cx="82" cy="94" rx="18" ry="16" fill="#323232"/><ellipse cx="104" cy="92" rx="14" ry="14" fill="#323232"/></g>
+                </svg>
+                {% elif wx_graphic == "cloudy" %}
+                <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g class="cloud-sec" style="opacity:0.5"><ellipse cx="70" cy="80" rx="32" ry="20" fill="#444"/><ellipse cx="56" cy="84" rx="20" ry="16" fill="#444"/><ellipse cx="88" cy="84" rx="18" ry="14" fill="#444"/></g>
+                    <g class="cloud-main"><ellipse cx="85" cy="95" rx="38" ry="22" fill="#353535"/><ellipse cx="66" cy="100" rx="24" ry="17" fill="#353535"/><ellipse cx="108" cy="101" rx="20" ry="15" fill="#353535"/><ellipse cx="78" cy="87" rx="22" ry="20" fill="#3c3c3c"/><ellipse cx="100" cy="84" rx="18" ry="17" fill="#3c3c3c"/></g>
+                </svg>
+                {% elif wx_graphic == "fog" %}
+                <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g class="cloud-main" style="opacity:0.6"><ellipse cx="80" cy="60" rx="42" ry="22" fill="#555"/><ellipse cx="60" cy="64" rx="26" ry="18" fill="#555"/><ellipse cx="104" cy="64" rx="22" ry="16" fill="#555"/></g>
+                    <line class="fog-line" x1="30" y1="88" x2="130" y2="88" stroke="#888" stroke-width="4" stroke-linecap="round" opacity="0.6"/>
+                    <line class="fog-line" x1="42" y1="104" x2="122" y2="104" stroke="#777" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+                    <line class="fog-line" x1="26" y1="120" x2="134" y2="120" stroke="#666" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
+                </svg>
+                {% elif wx_graphic == "drizzle" %}
+                <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g class="cloud-main"><ellipse cx="80" cy="72" rx="40" ry="22" fill="#3a3a3a"/><ellipse cx="62" cy="76" rx="26" ry="18" fill="#3a3a3a"/><ellipse cx="102" cy="76" rx="22" ry="16" fill="#3a3a3a"/><ellipse cx="74" cy="62" rx="22" ry="20" fill="#424242"/><ellipse cx="95" cy="60" rx="18" ry="17" fill="#424242"/></g>
+                    {% for dx,dy in [(58,98),(75,104),(92,98),(109,104),(67,112)] %}<line class="rain-drop" x1="{{ dx }}" y1="{{ dy }}" x2="{{ dx-3 }}" y2="{{ dy+10 }}" stroke="#5b9bd5" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>{% endfor %}
+                </svg>
+                {% elif wx_graphic == "rain" %}
+                <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g class="cloud-main"><ellipse cx="80" cy="68" rx="40" ry="22" fill="#2e2e2e"/><ellipse cx="62" cy="72" rx="26" ry="18" fill="#2e2e2e"/><ellipse cx="102" cy="72" rx="22" ry="16" fill="#2e2e2e"/><ellipse cx="74" cy="58" rx="22" ry="20" fill="#363636"/><ellipse cx="95" cy="56" rx="18" ry="17" fill="#363636"/></g>
+                    {% for dx,dy in [(55,96),(70,102),(85,96),(100,102),(115,96),(62,114),(79,120),(96,114)] %}<line class="rain-drop" x1="{{ dx }}" y1="{{ dy }}" x2="{{ dx-4 }}" y2="{{ dy+13 }}" stroke="#5b9bd5" stroke-width="2" stroke-linecap="round" opacity="0.85"/>{% endfor %}
+                </svg>
+                {% elif wx_graphic == "snow" %}
+                <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g class="cloud-main"><ellipse cx="80" cy="68" rx="40" ry="22" fill="#3a3a3a"/><ellipse cx="62" cy="72" rx="26" ry="18" fill="#3a3a3a"/><ellipse cx="102" cy="72" rx="22" ry="16" fill="#3a3a3a"/><ellipse cx="74" cy="58" rx="22" ry="20" fill="#424242"/><ellipse cx="95" cy="56" rx="18" ry="17" fill="#424242"/></g>
+                    {% for cx,cy in [(60,102),(80,110),(100,102),(70,120),(90,120)] %}<g class="snow-flake"><circle cx="{{ cx }}" cy="{{ cy }}" r="3" fill="#c8d8f0" opacity="0.9"/><line x1="{{ cx-5 }}" y1="{{ cy }}" x2="{{ cx+5 }}" y2="{{ cy }}" stroke="#c8d8f0" stroke-width="1.2" opacity="0.6"/><line x1="{{ cx }}" y1="{{ cy-5 }}" x2="{{ cx }}" y2="{{ cy+5 }}" stroke="#c8d8f0" stroke-width="1.2" opacity="0.6"/></g>{% endfor %}
+                </svg>
+                {% elif wx_graphic == "thunder" %}
+                <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g class="cloud-main"><ellipse cx="80" cy="62" rx="44" ry="24" fill="#222"/><ellipse cx="60" cy="67" rx="28" ry="20" fill="#222"/><ellipse cx="104" cy="67" rx="24" ry="18" fill="#222"/><ellipse cx="73" cy="51" rx="24" ry="21" fill="#2a2a2a"/><ellipse cx="96" cy="49" rx="20" ry="18" fill="#2a2a2a"/></g>
+                    <polygon class="lightning-bolt" points="86,84 74,108 82,108 72,132 96,102 86,102" fill="#e8c84a"/>
+                    {% for dx,dy in [(50,90),(110,90),(46,108),(116,108)] %}<line class="rain-drop" x1="{{ dx }}" y1="{{ dy }}" x2="{{ dx-4 }}" y2="{{ dy+12 }}" stroke="#5b9bd5" stroke-width="2" stroke-linecap="round" opacity="0.7"/>{% endfor %}
+                </svg>
+                {% endif %}
+            </div>
         </div>
-      </div>
+
+        <div class="wx-stats">
+            <div class="wx-stat"><div class="wx-stat-icon">🌡</div><div class="wx-stat-label">Temperature</div><div class="wx-stat-value">{{ weather_data.temperature }}<span class="wx-stat-unit"> °C</span></div></div>
+            <div class="wx-stat"><div class="wx-stat-icon">💨</div><div class="wx-stat-label">Wind Speed</div><div class="wx-stat-value">{{ weather_data.windspeed }}<span class="wx-stat-unit"> km/h</span></div></div>
+            <div class="wx-stat"><div class="wx-stat-icon">🧭</div><div class="wx-stat-label">Direction</div><div class="wx-stat-value">{{ wx_dir }}<span class="wx-stat-unit"> {{ weather_data.winddirection }}°</span></div></div>
+            <div class="wx-stat"><div class="wx-stat-icon">📋</div><div class="wx-stat-label">Condition</div><div class="wx-stat-value" style="font-size:1rem;padding-top:4px;">{{ wx_label }}</div></div>
+        </div>
+
+        <div class="wx-compass-row">
+            <div>
+                <div class="wx-compass-label">Wind Direction</div>
+                <div class="compass-wrap">
+                    <div class="compass-ring"></div>
+                    <div class="compass-dirs"><span class="compass-n">N</span><span class="compass-s">S</span><span class="compass-e">E</span><span class="compass-w">W</span></div>
+                    <div class="compass-arrow" style="transform:rotate({{ weather_data.winddirection }}deg);"></div>
+                </div>
+            </div>
+            <div class="wind-info">
+                <div class="wx-compass-label">Wind</div>
+                <div class="wind-speed-big">{{ weather_data.windspeed }} <span style="font-family:var(--font-body);font-size:0.9rem;color:var(--text-muted);">km/h</span></div>
+                <div class="wind-direction-text">Blowing from the {{ wx_dir }} · {{ weather_data.winddirection }}°</div>
+            </div>
+            <div style="margin-left:auto;text-align:right;">
+                <div class="wx-compass-label">Condition</div>
+                <div style="font-family:var(--font-display);font-size:1.4rem;letter-spacing:0.05em;color:var(--accent);">{{ wx_label }}</div>
+                <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px;">WMO Code {{ weather_data.weathercode }}</div>
+            </div>
+        </div>
+
+        <div class="wx-footer">
+            <span class="wx-footer-label">Last observed</span>
+            <span class="wx-footer-time">{{ weather_data.time }}</span>
+        </div>
+    </div>
     {% endif %}
 
-  </div>
+    {# ── WORLD SNAPSHOT CARDS ── #}
+    <div class="snapshot-header">
+        <div class="snapshot-title">🌍 Around the World Right Now</div>
+        <div class="snapshot-live"><span class="snapshot-dot"></span> Live conditions</div>
+    </div>
+
+    <div class="city-grid" id="city-grid">
+        {# skeleton placeholders while JS loads #}
+        {% for _ in range(8) %}
+        <div class="city-card-skeleton">
+            <div class="skel-line" style="height:28px;width:40%;"></div>
+            <div class="skel-line" style="height:14px;width:70%;"></div>
+            <div class="skel-line" style="height:40px;width:50%;margin-top:12px;"></div>
+            <div class="skel-line" style="height:12px;width:60%;"></div>
+        </div>
+        {% endfor %}
+    </div>
+
 </div>
+
+{# hidden form used by JS to submit city on card click #}
+<form method="POST" id="city-jump-form" style="display:none;">
+    {{ form.hidden_tag() }}
+    <input type="text" name="city" id="city-jump-input">
+    <input type="submit">
+</form>
+
+<script>
+const WMO_INFO = {
+    0:  {label:"Clear Sky",     icon:"☀️"},
+    1:  {label:"Mostly Clear",  icon:"🌤️"},
+    2:  {label:"Partly Cloudy", icon:"⛅"},
+    3:  {label:"Overcast",      icon:"☁️"},
+    45: {label:"Foggy",         icon:"🌫️"},
+    48: {label:"Icy Fog",       icon:"🌫️"},
+    51: {label:"Light Drizzle", icon:"🌦️"},
+    53: {label:"Drizzle",       icon:"🌦️"},
+    55: {label:"Heavy Drizzle", icon:"🌦️"},
+    61: {label:"Light Rain",    icon:"🌧️"},
+    63: {label:"Rain",          icon:"🌧️"},
+    65: {label:"Heavy Rain",    icon:"🌧️"},
+    71: {label:"Light Snow",    icon:"🌨️"},
+    73: {label:"Snow",          icon:"❄️"},
+    75: {label:"Heavy Snow",    icon:"❄️"},
+    77: {label:"Snow Grains",   icon:"🌨️"},
+    80: {label:"Rain Showers",  icon:"🌧️"},
+    81: {label:"Rain Showers",  icon:"🌧️"},
+    82: {label:"Heavy Showers", icon:"⛈️"},
+    85: {label:"Snow Showers",  icon:"🌨️"},
+    86: {label:"Heavy Snow Showers", icon:"❄️"},
+    95: {label:"Thunderstorm",  icon:"⛈️"},
+    96: {label:"Thunderstorm",  icon:"⛈️"},
+    99: {label:"Thunderstorm",  icon:"⛈️"},
+};
+
+function getWMO(code) {
+    return WMO_INFO[code] || {label:"Variable", icon:"🌤️"};
+}
+
+function submitCity(cityName) {
+    document.getElementById('city-jump-input').value = cityName;
+    document.getElementById('city-jump-form').submit();
+}
+
+async function loadWorldWeather() {
+    try {
+        const resp = await fetch('/api/world-weather');
+        const cities = await resp.json();
+
+        if (cities.error) throw new Error(cities.error);
+
+        const grid = document.getElementById('city-grid');
+        grid.innerHTML = '';
+
+        cities.forEach((city, i) => {
+            const wmo = getWMO(city.weathercode);
+            const isNight = city.is_day === 0;
+            const icon = (city.weathercode === 0 && isNight) ? '🌙' : wmo.icon;
+
+            const card = document.createElement('div');
+            card.className = 'city-card';
+            card.style.animationDelay = (i * 0.07) + 's';
+            card.innerHTML = `
+                <div class="city-card-icon">${icon}</div>
+                <div class="city-card-name">${city.city}</div>
+                <div class="city-card-condition">${city.label}</div>
+                <div class="city-card-temp">${city.temperature}<sup>°C</sup></div>
+                <div class="city-card-wind">💨 ${city.windspeed} km/h</div>
+                <div class="city-card-click">Click to view full report →</div>
+            `;
+            card.addEventListener('click', () => submitCity(city.city));
+            grid.appendChild(card);
+        });
+
+    } catch(err) {
+        document.getElementById('city-grid').innerHTML =
+            `<p style="color:var(--text-muted);font-size:0.85rem;grid-column:1/-1;">Could not load world weather snapshot. Check your connection.</p>`;
+    }
+}
+
+loadWorldWeather();
+</script>
+
 {% endblock %}
